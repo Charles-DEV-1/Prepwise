@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: #f8fafc;
+  color: hsl(var(--foreground));
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
+}
+
+::selection {
+  background: rgba(26, 86, 219, 0.16);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px);
+}
+
+.dark .glass-panel {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.brand-blue-surface {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(37, 99, 235, 0.18), transparent 28rem),
+    radial-gradient(circle at 18% 12%, rgba(239, 246, 255, 0.95), transparent 24rem),
+    linear-gradient(145deg, #ffffff 0%, #f8fafc 45%, #eff6ff 100%);
+}
+
+.blueprint-grid {
+  background-image:
+    linear-gradient(rgba(26, 86, 219, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26, 86, 219, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.brand-glow-ring {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset,
+    0 28px 90px rgba(26, 86, 219, 0.16);
+}
+
+.soft-card {
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.blue-gradient-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.2);
+}
+
+.soft-blue-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #eff6ff 100%);
+}
+
+.question-card {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.07);
+}
+
+.answer-option {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.answer-option:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.answer-option-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #0f172a;
+}
+
+.answer-option-correct {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #0f172a;
+}
+
+.answer-option-wrong {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #0f172a;
+}
