@@ -1,5 +1,37 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
 
-export default function DashboardRoute() {
-  return <DashboardPage />;
+export default async function DashboardRoute() {
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {}
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const firstName =
+    user?.user_metadata?.full_name?.split(" ")[0] ??
+    user?.email?.split("@")[0] ??
+    "Student";
+
+  return <DashboardPage userName={firstName} />;
 }
