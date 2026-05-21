@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Flag, TimerReset, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ type Question = {
   subject_label: string;
   subject_id: string;
 };
+
+type QuestionRow = Omit<Question, "subject_label">;
 
 type ExamPhase = "setup" | "exam" | "submitting";
 
@@ -97,7 +99,8 @@ export function ExamPage() {
         .eq("subject_id", subject.id);
 
       if (!error && data) {
-        const shuffled = [...data].sort(() => Math.random() - 0.5);
+        const questionRows = data as QuestionRow[];
+        const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
         const picked = shuffled.slice(0, QUESTIONS_PER_SUBJECT).map((q) => ({
           ...q,
           subject_label: subject.label,
@@ -132,7 +135,6 @@ export function ExamPage() {
       if (selectedAnswers[q.id] === q.correct_answer) correct++;
     });
 
-    const totalAnswered = Object.keys(selectedAnswers).length;
     const scorePercent =
       questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0;
 
@@ -145,7 +147,7 @@ export function ExamPage() {
         score: scorePercent,
         total_questions: questions.length,
         completed_at: new Date().toISOString(),
-      })
+      } as never)
       .select("id")
       .single();
 
@@ -154,18 +156,20 @@ export function ExamPage() {
       return;
     }
 
+    const sessionId = (session as { id: string }).id;
+
     // Save all answers
     const answerRows = questions.map((q) => ({
-      session_id: session.id,
+      session_id: sessionId,
       question_id: q.id,
       selected_answer: selectedAnswers[q.id] ?? null,
       is_correct: selectedAnswers[q.id] === q.correct_answer,
     }));
 
-    await supabase.from("answers").insert(answerRows);
+    await supabase.from("answers").insert(answerRows as never);
     await updateStreak(supabase, user.id);
 
-    router.push(`/results/${session.id}`);
+    router.push(`/results/${sessionId}`);
   }, [questions, selectedAnswers, supabase, router]);
 
   const answeredCount = Object.keys(selectedAnswers).length;

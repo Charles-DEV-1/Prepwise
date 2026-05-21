@@ -25,6 +25,19 @@ type Answer = {
   };
 };
 
+type SessionSummary = {
+  score: number | null;
+  total_questions: number | null;
+};
+
+type AnswerWithSubject = Answer & {
+  question?: Answer["question"] & {
+    subject?: {
+      name?: string | null;
+    } | null;
+  };
+};
+
 type SubjectStat = {
   label: string;
   correct: number;
@@ -56,8 +69,9 @@ export function ResultsPage({ id }: { id: string }) {
       .single();
 
     if (session) {
-      setScore(session.score ?? 0);
-      setTotalQuestions(session.total_questions ?? 0);
+      const sessionSummary = session as SessionSummary;
+      setScore(sessionSummary.score ?? 0);
+      setTotalQuestions(sessionSummary.total_questions ?? 0);
     }
 
     // Get answers with questions
@@ -78,17 +92,16 @@ export function ResultsPage({ id }: { id: string }) {
       .eq("session_id", id);
 
     if (answerData) {
-      setAnswers(answerData as never);
+      const answerRows = answerData as AnswerWithSubject[];
+      setAnswers(answerRows);
 
       // Build subject stats
       const stats: Record<string, { correct: number; total: number }> = {};
-      answerData.forEach((a: never) => {
-        const subjectName =
-          (a as never as { question: { subject: { name: string } } }).question
-            ?.subject?.name ?? "Unknown";
+      answerRows.forEach((answer) => {
+        const subjectName = answer.question?.subject?.name ?? "Unknown";
         if (!stats[subjectName]) stats[subjectName] = { correct: 0, total: 0 };
         stats[subjectName].total++;
-        if ((a as never as { is_correct: boolean }).is_correct) {
+        if (answer.is_correct) {
           stats[subjectName].correct++;
         }
       });
@@ -164,8 +177,12 @@ export function ResultsPage({ id }: { id: string }) {
             variant="outline"
             onClick={() => {
               const text = `I scored ${score}% on a JAMB Mock Exam on Prepwise! 🎯\nPractice for free at prepwise-two-mu.vercel.app`;
-              void navigator.share?.({ text }) ??
-                navigator.clipboard.writeText(text);
+              if (navigator.share) {
+                void navigator.share({ text });
+                return;
+              }
+
+              void navigator.clipboard.writeText(text);
             }}
           >
             <Share2 className="h-4 w-4" />

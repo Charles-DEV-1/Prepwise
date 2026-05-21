@@ -61,7 +61,8 @@ export function PracticePage() {
 
     if (!error && data) {
       // Shuffle and take 25
-      const shuffled = [...data].sort(() => Math.random() - 0.5);
+      const questionRows = data as Question[];
+      const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
       setQuestions(shuffled.slice(0, 25));
     }
     setLoading(false);
@@ -189,12 +190,12 @@ export function PracticePage() {
               {/* Year + topic badge */}
               <div className="mb-4 flex gap-2">
                 {question.year && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="text-xs">
                     JAMB {question.year}
                   </Badge>
                 )}
                 {question.topic && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="text-xs">
                     {question.topic}
                   </Badge>
                 )}

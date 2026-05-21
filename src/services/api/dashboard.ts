@@ -94,13 +94,16 @@ export async function getDashboardData(
   > = {};
 
   if (weakData) {
-    weakData.forEach((a: never) => {
-      const topic = (a as never as { question: { topic: string } }).question
-        ?.topic;
-      const subject = (
-        a as never as { question: { subject: { name: string } } }
-      ).question?.subject?.name;
-      const isCorrect = (a as never as { is_correct: boolean }).is_correct;
+    weakData.forEach((answer) => {
+      const question = Array.isArray(answer.question)
+        ? answer.question[0]
+        : answer.question;
+      const subjectRow = Array.isArray(question?.subject)
+        ? question?.subject[0]
+        : question?.subject;
+      const topic = question?.topic;
+      const subject = subjectRow?.name;
+      const isCorrect = answer.is_correct;
       if (!topic || !subject) return;
       if (!topicMap[topic]) topicMap[topic] = { correct: 0, total: 0, subject };
       topicMap[topic].total++;
