@@ -18,57 +18,109 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  dashboardMetrics,
-  recentSessions,
-  weakTopics,
-} from "@/constants/mock-data";
-import { daysUntil, formatNumber } from "@/lib/utils";
 
-export function DashboardPage({ userName = "Student" }: { userName?: string }) {
+type DashboardData = {
+  averageScore: number;
+  totalQuestionsAnswered: number;
+  streak: number;
+  daysUntilExam: number | null;
+  examType: string;
+  targetScore: number;
+  recentSessions: {
+    id: string;
+    type: string;
+    score: number;
+    totalQuestions: number;
+    date: string;
+  }[];
+  weakTopics: {
+    topic: string;
+    subject: string;
+    accuracy: number;
+  }[];
+  hasSessions: boolean;
+} | null;
+
+export function DashboardPage({
+  userName = "Student",
+  data,
+}: {
+  userName?: string;
+  data?: DashboardData;
+}) {
   const metrics = [
     {
       label: "Study streak",
-      value: `${dashboardMetrics.streak} days`,
+      value: `${data?.streak ?? 0} days`,
       icon: Flame,
       tone: "text-amber",
     },
     {
       label: "Average score",
-      value: `${dashboardMetrics.averageScore}%`,
+      value: data?.hasSessions ? `${data.averageScore}%` : "—",
       icon: TrendingUp,
       tone: "text-success",
     },
     {
       label: "Questions answered",
-      value: formatNumber(dashboardMetrics.questionsAnswered),
+      value: data?.totalQuestionsAnswered
+        ? data.totalQuestionsAnswered.toLocaleString()
+        : "0",
       icon: BookOpenCheck,
       tone: "text-primary",
     },
     {
       label: "Days until exam",
-      value: daysUntil(dashboardMetrics.examDate),
+      value:
+        data?.daysUntilExam != null ? `${data.daysUntilExam} days` : "Not set",
       icon: CalendarDays,
       tone: "text-primary",
     },
   ];
 
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <div className="space-y-6">
+      {/* Welcome banner */}
       <section className="soft-blue-gradient relative overflow-hidden rounded-[2rem] border border-border p-6 shadow-soft md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <Badge className="border-blue-200 bg-white text-primary">
-          Today&apos;s AI plan
+          {data?.examType ?? "JAMB"} preparation
         </Badge>
         <div className="relative mt-5 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-normal text-navy md:text-4xl">
-              Good afternoon, {userName}.
+              {greeting}, {userName}.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              You are 72% through this week&apos;s target. Focus on Physics
-              waves, then run a 20-question English drill.
-            </p>
+            {!data?.hasSessions ? (
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                Welcome to Prepwise! Start your first practice session to see
+                your personalised stats here.
+              </p>
+            ) : data.weakTopics.length > 0 ? (
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                Your average score is{" "}
+                <span className="font-semibold text-navy">
+                  {data.averageScore}%
+                </span>
+                . Focus on{" "}
+                <span className="font-semibold text-navy">
+                  {data.weakTopics[0]?.subject}
+                </span>{" "}
+                — your weakest area right now.
+              </p>
+            ) : (
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                You are doing great! Average score:{" "}
+                <span className="font-semibold text-navy">
+                  {data.averageScore}%
+                </span>
+                . Keep up the momentum.
+              </p>
+            )}
           </div>
           <Button asChild>
             <Link href="/practice">
@@ -78,6 +130,7 @@ export function DashboardPage({ userName = "Student" }: { userName?: string }) {
         </div>
       </section>
 
+      {/* Stats row */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
           <Card
@@ -101,75 +154,104 @@ export function DashboardPage({ userName = "Student" }: { userName?: string }) {
         ))}
       </section>
 
+      {/* Weak topics + Recent sessions */}
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        {/* Weak topics */}
         <Card className="border-border bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Sparkles className="h-5 w-5 text-primary" />
-              Recommended practice
+              {data?.hasSessions ? "Recommended practice" : "Start practising"}
             </CardTitle>
             <CardDescription>
-              Prioritized from weak topics and recent score movement.
+              {data?.hasSessions
+                ? "Based on your weak topics and recent scores."
+                : "Complete a practice session to see personalised recommendations."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {weakTopics.map((topic) => (
-              <div
-                key={topic.topic}
-                className="rounded-2xl border border-border bg-[#F8FAFC] p-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-navy">{topic.subject}</p>
-                    <p className="text-sm text-slate-500">{topic.topic}</p>
-                  </div>
-                  <Badge className="border-amber/20 bg-amber/10 text-amber">
-                    {topic.accuracy}% accuracy
-                  </Badge>
-                </div>
-                <Progress value={topic.accuracy} className="mt-4" />
+            {!data?.hasSessions || data.weakTopics.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-[#F8FAFC] p-6 text-center">
+                <p className="text-sm text-slate-500">
+                  {data?.hasSessions
+                    ? "Great job — no weak topics detected yet!"
+                    : "Your weak topics will appear here after your first session."}
+                </p>
+                <Button asChild className="mt-4" size="sm">
+                  <Link href="/practice">Start practice</Link>
+                </Button>
               </div>
-            ))}
+            ) : (
+              data.weakTopics.map((topic) => (
+                <div
+                  key={topic.topic}
+                  className="rounded-2xl border border-border bg-[#F8FAFC] p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-navy">{topic.subject}</p>
+                      <p className="text-sm text-slate-500">{topic.topic}</p>
+                    </div>
+                    <Badge className="border-amber/20 bg-amber/10 text-amber">
+                      {topic.accuracy}% accuracy
+                    </Badge>
+                  </div>
+                  <Progress value={topic.accuracy} className="mt-4" />
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
+        {/* Recent sessions */}
         <Card className="border-border bg-white shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Study rhythm</CardTitle>
+            <CardTitle className="text-lg">Recent sessions</CardTitle>
             <CardDescription>
-              Simple signals to keep the day focused.
+              Your last practice and exam activity.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-softblue p-5">
-              <div className="mb-3 flex justify-between text-sm font-medium text-slate-600">
-                <span>Weekly goal</span>
-                <span>72%</span>
-              </div>
-              <Progress value={72} />
-            </div>
-            {recentSessions.map((session) => (
-              <div
-                key={`${session.subject}-${session.time}`}
-                className="flex items-center justify-between rounded-2xl border border-border p-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-navy">
-                    {session.subject}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {session.type} - {session.time}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-primary">
-                  {session.score}%
+            {!data?.hasSessions || data.recentSessions.length === 0 ? (
+              <div className="rounded-2xl bg-softblue p-5 text-center">
+                <p className="text-sm text-slate-600">
+                  No sessions yet. Take your first practice or mock exam.
                 </p>
               </div>
-            ))}
+            ) : (
+              <>
+                <div className="rounded-2xl bg-softblue p-5">
+                  <div className="mb-3 flex justify-between text-sm font-medium text-slate-600">
+                    <span>Average score</span>
+                    <span>{data.averageScore}%</span>
+                  </div>
+                  <Progress value={data.averageScore} />
+                </div>
+                {data.recentSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between rounded-2xl border border-border p-3"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-navy">
+                        {session.type}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {session.totalQuestions} questions · {session.date}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-primary">
+                      {session.score}%
+                    </p>
+                  </div>
+                ))}
+              </>
+            )}
           </CardContent>
         </Card>
       </section>
 
+      {/* Quick actions */}
       <section className="grid gap-4 md:grid-cols-3">
         {[
           [
@@ -177,12 +259,12 @@ export function DashboardPage({ userName = "Student" }: { userName?: string }) {
             "/practice",
             "Answer targeted questions with instant feedback.",
           ],
+          ["Mock exam", "/exam", "Simulate exam day with a full timed exam."],
           [
-            "Mock exam",
-            "/exam",
-            "Simulate exam day with timers and question maps.",
+            "Progress",
+            "/progress",
+            "Review your score trends and weak topics.",
           ],
-          ["Progress", "/progress", "Review trends, streaks, and weak topics."],
         ].map(([title, href, body]) => (
           <Card key={title} className="border-border bg-white shadow-sm">
             <CardContent className="p-5">
@@ -192,7 +274,7 @@ export function DashboardPage({ userName = "Student" }: { userName?: string }) {
               <h3 className="mt-4 font-bold text-navy">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
               <Button asChild variant="outline" className="mt-5 w-full">
-                <Link href={href}>Open</Link>
+                <Link href={href as string}>Open</Link>
               </Button>
             </CardContent>
           </Card>

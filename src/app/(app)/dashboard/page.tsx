@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
+import { getDashboardData } from "@/services/api/dashboard";
 
 export default async function DashboardRoute() {
   const cookieStore = await cookies();
@@ -33,5 +34,8 @@ export default async function DashboardRoute() {
     user?.email?.split("@")[0] ??
     "Student";
 
-  return <DashboardPage userName={firstName} />;
+  // Fetch real dashboard data
+  const dashboardData = user ? await getDashboardData(supabase, user.id) : null;
+
+  return <DashboardPage userName={firstName} data={dashboardData} />;
 }
