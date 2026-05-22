@@ -44,8 +44,16 @@ body {
 
 .brand-blue-surface {
   background:
-    radial-gradient(circle at 80% 18%, rgba(37, 99, 235, 0.18), transparent 28rem),
-    radial-gradient(circle at 18% 12%, rgba(239, 246, 255, 0.95), transparent 24rem),
+    radial-gradient(
+      circle at 80% 18%,
+      rgba(37, 99, 235, 0.18),
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 18% 12%,
+      rgba(239, 246, 255, 0.95),
+      transparent 24rem
+    ),
     linear-gradient(145deg, #ffffff 0%, #f8fafc 45%, #eff6ff 100%);
 }
 
@@ -111,4 +119,19 @@ body {
   border-color: #dc2626;
   background: #fef2f2;
   color: #0f172a;
+}
+.perspective {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
 }
