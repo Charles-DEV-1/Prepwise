@@ -1,62 +1,215 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Activity, BarChart3, Flame, Target } from "lucide-react";
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const trend = [42, 48, 56, 61, 58, 66, 72, 78];
-const stats = [
-  { label: "Total sessions", value: "48", icon: Activity },
-  { label: "Best mock", value: "312", icon: Target },
-  { label: "Current streak", value: "12", icon: Flame },
-  { label: "Avg growth", value: "+18%", icon: BarChart3 },
-];
+import { createClient } from "@/services/supabase/client";
+import { getProgressData } from "@/services/api/progress";
+
+type Session = {
+  id: string;
+  score: number;
+  total_questions: number;
+  created_at: string;
+};
 
 export function ProgressPage() {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const progressData = await getProgressData(user.id);
+
+      setSessions(progressData);
+
+      const { data: streakData } = await supabase
+        .from("streaks")
+        .select("current_count")
+        .eq("user_id", user.id)
+        .single();
+
+      setStreak(
+        (streakData as { current_count: number } | null)?.current_count || 0,
+      );
+    }
+
+    loadData();
+  }, []);
+
+  const chartData = useMemo(() => {
+    return sessions.map((session, index) => ({
+      name: `S${index + 1}`,
+      score: session.score,
+    }));
+  }, [sessions]);
+
+  const bestScore = useMemo(() => {
+    if (!sessions.length) return 0;
+
+    return Math.max(...sessions.map((s) => s.score || 0));
+  }, [sessions]);
+
+  const averageScore = useMemo(() => {
+    if (!sessions.length) return 0;
+
+    const total = sessions.reduce((acc, curr) => {
+      return acc + (curr.score || 0);
+    }, 0);
+
+    return Math.round(total / sessions.length);
+  }, [sessions]);
+
+  const totalQuestions = useMemo(() => {
+    return sessions.reduce((acc, curr) => {
+      return acc + curr.total_questions;
+    }, 0);
+  }, [sessions]);
+
+  const stats = [
+    {
+      label: "Total sessions",
+      value: sessions.length,
+      icon: Activity,
+    },
+    {
+      label: "Best score",
+      value: `${bestScore}%`,
+      icon: Target,
+    },
+    {
+      label: "Current streak",
+      value: streak,
+      icon: Flame,
+    },
+    {
+      label: "Average score",
+      value: `${averageScore}%`,
+      icon: BarChart3,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-normal text-navy">Progress analytics</h1>
-        <p className="mt-2 text-sm text-slate-600">Score trends, streak activity, topic strength, and total statistics.</p>
+        <h1 className="text-3xl font-bold text-navy">Progress analytics</h1>
+
+        <p className="mt-2 text-sm text-slate-600">
+          Real performance insights from your practice sessions and mock exams.
+        </p>
       </div>
+
       <section className="grid gap-4 md:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
           <Card key={label} className="border-border bg-white shadow-sm">
             <CardContent className="flex items-center justify-between p-5">
               <div>
                 <p className="text-sm text-slate-600">{label}</p>
+
                 <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
               </div>
+
               <Icon className="h-5 w-5 text-primary" />
             </CardContent>
           </Card>
         ))}
       </section>
+
       <Card className="border-border bg-white shadow-sm">
         <CardHeader>
           <CardTitle>Score trend</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex h-64 items-end gap-3">
-            {trend.map((value, index) => (
-              <div key={index} className="flex flex-1 flex-col items-center gap-2">
-                <div className="w-full rounded-t-lg bg-primary" style={{ height: `${value * 2}px` }} />
-                <span className="text-xs text-slate-600">W{index + 1}</span>
-              </div>
-            ))}
-          </div>
+
+        <CardContent className="h-[320px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#185FA5"
+                strokeWidth={3}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
+
       <Card className="border-border bg-white shadow-sm">
         <CardHeader>
-          <CardTitle>Streak heatmap</CardTitle>
+          <CardTitle>Study activity</CardTitle>
         </CardHeader>
+
         <CardContent>
-          <div className="grid grid-cols-14 gap-2">
+          <div className="grid grid-cols-10 gap-2 md:grid-cols-14">
             {Array.from({ length: 70 }, (_, index) => (
               <div
                 key={index}
-                className="aspect-square rounded-[4px] bg-primary/10"
-                style={{ opacity: 0.2 + ((index % 5) + 1) * 0.14 }}
+                className={`aspect-square rounded-[4px] ${
+                  index < streak ? "bg-primary" : "bg-primary/10"
+                }`}
               />
             ))}
+          </div>
+
+          <p className="mt-4 text-sm text-slate-600">
+            You have studied for{" "}
+            <span className="font-semibold text-navy">
+              {streak} consecutive days
+            </span>
+            .
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle>Total statistics</CardTitle>
+        </CardHeader>
+
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border p-4">
+            <p className="text-sm text-slate-500">Questions answered</p>
+
+            <p className="mt-2 text-3xl font-bold text-navy">
+              {totalQuestions}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border p-4">
+            <p className="text-sm text-slate-500">Sessions completed</p>
+
+            <p className="mt-2 text-3xl font-bold text-navy">
+              {sessions.length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border p-4">
+            <p className="text-sm text-slate-500">Best score</p>
+
+            <p className="mt-2 text-3xl font-bold text-navy">{bestScore}%</p>
           </div>
         </CardContent>
       </Card>
