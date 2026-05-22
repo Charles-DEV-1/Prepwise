@@ -32,66 +32,61 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarContent pathname={pathname} />
       </aside>
 
-      <div
-        className={cn(
-          "fixed inset-0 z-50 bg-navy/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
-          mobileMenuOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0",
-        )}
-        aria-hidden={!mobileMenuOpen}
-        onClick={() => setMobileMenuOpen(false)}
-      >
-        <aside
-          className={cn(
-            "flex h-full w-[min(19rem,86vw)] flex-col border-r border-border bg-white px-4 py-5 shadow-2xl transition-transform duration-300 ease-out",
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-          aria-label="Mobile navigation"
-          onClick={(event) => event.stopPropagation()}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-navy/40 backdrop-blur-sm lg:hidden"
+          aria-modal="true"
+          role="dialog"
+          onClick={() => setMobileMenuOpen(false)}
         >
-          <div className="mb-6 flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-3 px-2">
-              <Image
-                src="/brand/prepwise-logo-blue.png"
-                alt="Prepwise logo"
-                width={42}
-                height={42}
-                className="rounded-xl"
-              />
-              <div>
-                <p className="text-lg font-extrabold text-navy">prepwise</p>
-                <p className="text-xs font-medium text-slate-500">
-                  Smart prep. Higher scores.
-                </p>
-              </div>
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Close menu"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <SidebarContent pathname={pathname} compact />
-        </aside>
-      </div>
+          <aside
+            className="flex h-full w-[min(19rem,86vw)] animate-in slide-in-from-left duration-300 flex-col border-r border-border bg-white px-4 py-5 shadow-2xl"
+            aria-label="Mobile navigation"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <Link href="/dashboard" className="flex items-center gap-3 px-2">
+                <Image
+                  src="/brand/prepwise-logo-blue.png"
+                  alt="Prepwise logo"
+                  width={42}
+                  height={42}
+                  className="rounded-xl"
+                />
+                <div>
+                  <p className="text-lg font-extrabold text-navy">prepwise</p>
+                  <p className="text-xs font-medium text-slate-500">
+                    Smart prep. Higher scores.
+                  </p>
+                </div>
+              </Link>
+              <button
+                type="button"
+                aria-label="Close menu"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition hover:bg-softblue hover:text-primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <SidebarContent pathname={pathname} compact />
+          </aside>
+        </div>
+      )}
 
       <div className="lg:pl-72">
         <header className="sticky top-0 z-30 border-b border-border bg-white/88 px-4 py-3 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="flex items-center gap-2 lg:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
+                type="button"
                 aria-label="Open menu"
                 aria-expanded={mobileMenuOpen}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 transition hover:bg-softblue hover:text-primary"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <Menu className="h-5 w-5" />
-              </Button>
+              </button>
               <Link href="/dashboard" className="font-semibold text-navy">
                 prepwise
               </Link>
