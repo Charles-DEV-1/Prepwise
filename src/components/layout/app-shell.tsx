@@ -157,21 +157,6 @@ function SidebarContent({
           );
         })}
       </nav>
-
-      <div
-        className={cn(
-          "rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-softblue p-4 text-navy shadow-soft",
-          compact ? "mt-auto" : "absolute bottom-5 left-4 right-4",
-        )}
-      >
-        <Badge className="border-blue-200 bg-white text-primary">AI plan</Badge>
-        <p className="mt-3 text-sm font-semibold">
-          Unlock study plans and deeper weak-topic analysis.
-        </p>
-        <Button asChild size="sm" className="mt-4 w-full">
-          <Link href="/upgrade">Upgrade</Link>
-        </Button>
-      </div>
     </>
   );
 }

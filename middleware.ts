@@ -8,7 +8,6 @@ const protectedRoutes = [
   "/results",
   "/progress",
   "/leaderboard",
-  "/upgrade",
   "/profile",
   "/settings",
   "/onboarding",
