@@ -7,6 +7,7 @@ import {
   Shield,
   Trophy,
   User,
+  WalletCards,
 } from "lucide-react";
 
 export const publicNav = [
@@ -22,6 +23,7 @@ export const appNav = [
   { label: "Mock Exam", href: "/exam", icon: GraduationCap },
   { label: "Progress", href: "/progress", icon: BarChart3 },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { label: "Upgrade", href: "/upgrade", icon: WalletCards },
   { label: "Profile", href: "/profile", icon: User },
   { label: "Settings", href: "/settings", icon: Settings },
 ];

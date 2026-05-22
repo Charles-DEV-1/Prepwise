@@ -3,6 +3,13 @@
 import type { OnboardingValues } from "@/lib/validations";
 import { createClient } from "@/services/supabase/client";
 
+export type ProfileData = {
+  full_name: string | null;
+  exam_type: string | null;
+  target_score: number | null;
+  email: string | null;
+};
+
 export async function completeOnboarding(values: OnboardingValues) {
   const supabase = createClient();
   const {
@@ -10,7 +17,8 @@ export async function completeOnboarding(values: OnboardingValues) {
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) throw userError ?? new Error("Missing authenticated user");
+  if (userError || !user)
+    throw userError ?? new Error("Missing authenticated user");
 
   const payload = {
     id: user.id,
@@ -23,7 +31,56 @@ export async function completeOnboarding(values: OnboardingValues) {
     onboarding_completed: true,
   };
 
-  const { error } = await supabase.from("users").upsert([payload] as never[]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("users") as any).upsert([payload]);
+
+  if (error) throw error;
+}
+
+export async function getProfileData(): Promise<ProfileData> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user)
+    throw userError ?? new Error("Missing authenticated user");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from("users") as any)
+    .select("full_name, exam_type, target_score, email")
+    .eq("id", user.id)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    full_name: data?.full_name || user.user_metadata?.full_name || "",
+    exam_type: data?.exam_type || null,
+    target_score: data?.target_score || null,
+    email: data?.email || user.email || null,
+  };
+}
+
+export async function updateProfileData(profile: Partial<ProfileData>) {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user)
+    throw userError ?? new Error("Missing authenticated user");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from("users") as any)
+    .update({
+      full_name: profile.full_name,
+      exam_type: profile.exam_type,
+      target_score: profile.target_score,
+    })
+    .eq("id", user.id);
 
   if (error) throw error;
 }

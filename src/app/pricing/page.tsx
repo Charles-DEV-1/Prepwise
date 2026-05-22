@@ -7,15 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const plans = [
   {
-    name: "Prepwise",
+    name: "Starter",
     price: "Free",
+    items: ["Past questions", "Basic mock exams", "Starter progress tracking"],
+  },
+  {
+    name: "Prepwise Pro",
+    price: "Coming soon",
     items: [
-      "Past questions",
-      "Mock exams",
-      "Progress tracking",
       "AI explanations",
       "Personalized study plans",
-      "Analytics and insights",
+      "Weak-topic analytics",
+      "Leaderboard boosts",
     ],
   },
 ];
@@ -28,16 +31,22 @@ export default function PricingPage() {
         <div className="container">
           <div className="mx-auto max-w-2xl text-center">
             <h1 className="text-5xl font-bold tracking-normal text-navy">
-              Completely free for all students.
+              Simple pricing for ambitious students.
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Access all features at no cost. Study smarter with AI-powered
-              insights.
+              Start free and upgrade when you need deeper AI guidance.
             </p>
           </div>
           <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
             {plans.map((plan) => (
-              <Card key={plan.name} className="soft-card border-primary">
+              <Card
+                key={plan.name}
+                className={
+                  plan.name.includes("Pro")
+                    ? "soft-card border-primary"
+                    : "soft-card"
+                }
+              >
                 <CardHeader>
                   <CardTitle>{plan.name}</CardTitle>
                   <p className="text-3xl font-bold text-primary">
