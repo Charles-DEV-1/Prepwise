@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,13 +39,9 @@ export function PracticePage() {
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    loadQuestions();
-  }, [selectedSubject]);
-
-  async function loadQuestions() {
+  const loadQuestions = useCallback(async () => {
     setLoading(true);
     setQuestionIndex(0);
     setSelected(null);
@@ -66,7 +62,11 @@ export function PracticePage() {
       setQuestions(shuffled.slice(0, 25));
     }
     setLoading(false);
-  }
+  }, [selectedSubject.id, supabase]);
+
+  useEffect(() => {
+    void loadQuestions();
+  }, [loadQuestions]);
 
   function handleSelect(optionKey: string) {
     if (!submitted) setSelected(optionKey);
@@ -190,14 +190,10 @@ export function PracticePage() {
               {/* Year + topic badge */}
               <div className="mb-4 flex gap-2">
                 {question.year && (
-                  <Badge className="text-xs">
-                    JAMB {question.year}
-                  </Badge>
+                  <Badge className="text-xs">JAMB {question.year}</Badge>
                 )}
                 {question.topic && (
-                  <Badge className="text-xs">
-                    {question.topic}
-                  </Badge>
+                  <Badge className="text-xs">{question.topic}</Badge>
                 )}
               </div>
 

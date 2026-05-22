@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flag, TimerReset, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ type ExamPhase = "setup" | "exam" | "submitting";
 
 export function ExamPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [phase, setPhase] = useState<ExamPhase>("setup");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -65,57 +65,6 @@ export function ExamPage() {
   } = useAppStore();
 
   const question = questions[activeQuestionIndex];
-
-  // Timer
-  useEffect(() => {
-    if (phase !== "exam") return;
-    if (seconds <= 0) {
-      void handleSubmit();
-      return;
-    }
-    const id = setInterval(() => setSeconds((s) => s - 1), 1000);
-    return () => clearInterval(id);
-  }, [phase, seconds]);
-
-  const minutes = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const secs = (seconds % 60).toString().padStart(2, "0");
-  const timerRed = seconds < 10 * 60;
-  const timerAmber = seconds < 30 * 60 && !timerRed;
-
-  async function startExam() {
-    setLoading(true);
-    resetExam();
-
-    const allQuestions: Question[] = [];
-
-    for (const subject of EXAM_SUBJECTS) {
-      const { data, error } = await supabase
-        .from("questions")
-        .select(
-          "id, prompt, options, correct_answer, explanation, topic, year, subject_id",
-        )
-        .eq("subject_id", subject.id);
-
-      if (!error && data) {
-        const questionRows = data as QuestionRow[];
-        const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
-        const picked = shuffled.slice(0, QUESTIONS_PER_SUBJECT).map((q) => ({
-          ...q,
-          subject_label: subject.label,
-        }));
-        allQuestions.push(...picked);
-      }
-    }
-
-    // Shuffle all questions together
-    const shuffled = allQuestions.sort(() => Math.random() - 0.5);
-    setQuestions(shuffled);
-    setSeconds(EXAM_DURATION);
-    setPhase("exam");
-    setLoading(false);
-  }
 
   const handleSubmit = useCallback(async () => {
     setPhase("submitting");
@@ -171,6 +120,57 @@ export function ExamPage() {
 
     router.push(`/results/${sessionId}`);
   }, [questions, selectedAnswers, supabase, router]);
+
+  // Timer
+  useEffect(() => {
+    if (phase !== "exam") return;
+    if (seconds <= 0) {
+      void handleSubmit();
+      return;
+    }
+    const id = setInterval(() => setSeconds((s) => s - 1), 1000);
+    return () => clearInterval(id);
+  }, [handleSubmit, phase, seconds]);
+
+  const minutes = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = (seconds % 60).toString().padStart(2, "0");
+  const timerRed = seconds < 10 * 60;
+  const timerAmber = seconds < 30 * 60 && !timerRed;
+
+  async function startExam() {
+    setLoading(true);
+    resetExam();
+
+    const allQuestions: Question[] = [];
+
+    for (const subject of EXAM_SUBJECTS) {
+      const { data, error } = await supabase
+        .from("questions")
+        .select(
+          "id, prompt, options, correct_answer, explanation, topic, year, subject_id",
+        )
+        .eq("subject_id", subject.id);
+
+      if (!error && data) {
+        const questionRows = data as QuestionRow[];
+        const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, QUESTIONS_PER_SUBJECT).map((q) => ({
+          ...q,
+          subject_label: subject.label,
+        }));
+        allQuestions.push(...picked);
+      }
+    }
+
+    // Shuffle all questions together
+    const shuffled = allQuestions.sort(() => Math.random() - 0.5);
+    setQuestions(shuffled);
+    setSeconds(EXAM_DURATION);
+    setPhase("exam");
+    setLoading(false);
+  }
 
   const answeredCount = Object.keys(selectedAnswers).length;
   const unansweredCount = questions.length - answeredCount;

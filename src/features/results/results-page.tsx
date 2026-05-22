@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RotateCcw, Share2, Trophy, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ type SubjectStat = {
 };
 
 export function ResultsPage({ id }: { id: string }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [score, setScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
@@ -54,11 +54,7 @@ export function ResultsPage({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
-    void loadResults();
-  }, [id]);
-
-  async function loadResults() {
+  const loadResults = useCallback(async () => {
     setLoading(true);
 
     // Get session
@@ -118,7 +114,11 @@ export function ResultsPage({ id }: { id: string }) {
     }
 
     setLoading(false);
-  }
+  }, [id, supabase]);
+
+  useEffect(() => {
+    void loadResults();
+  }, [loadResults]);
 
   const wrongAnswers = answers.filter((a) => !a.is_correct);
   const correctCount = answers.filter((a) => a.is_correct).length;
