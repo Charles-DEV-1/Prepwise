@@ -9,48 +9,53 @@ export function useUserPlan() {
   const [plan, setPlan] = useState<Plan>("loading");
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function fetchPlan() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setPlan("free");
-        return;
-      }
+      try {
+        const supabase = createClient();
 
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("plan, status, current_period_end")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (
-        data &&
-        (
-          data as {
-            plan: string;
-            status: string;
-            current_period_end: string | null;
-          }
-        ).plan === "pro" &&
-        (
-          data as {
-            plan: string;
-            status: string;
-            current_period_end: string | null;
-          }
-        ).status === "active"
-      ) {
-        const end = (data as { current_period_end: string | null })
-          .current_period_end;
-        if (!end || new Date(end) > new Date()) {
-          setPlan("pro");
+        if (!user) {
+          setPlan("free");
           return;
         }
+
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .select("plan, status, current_period_end")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        console.log("USER:", user?.id);
+        console.log("SUB DATA:", data);
+        console.log("SUB ERROR:", error);
+
+        if (error) {
+          console.error("Subscription fetch error:", error.message);
+          setPlan("free");
+          return;
+        }
+
+        if (!data) {
+          setPlan("free");
+          return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sub = data as any;
+
+        const isPro =
+          sub.plan === "pro" &&
+          sub.status === "active" &&
+          (!sub.current_period_end ||
+            new Date(sub.current_period_end) > new Date());
+
+        setPlan(isPro ? "pro" : "free");
+      } catch (err) {
+        console.error("useUserPlan error:", err);
+        setPlan("free");
       }
-      setPlan("free");
     }
 
     void fetchPlan();
