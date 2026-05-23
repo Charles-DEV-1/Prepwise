@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flag, TimerReset, AlertTriangle } from "lucide-react";
+import NextLink from "next/link";
+
+import { Flag, TimerReset, AlertTriangle, Sparkles } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Dialog,
   DialogContent,
@@ -13,10 +17,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { createClient } from "@/services/supabase/client";
 import { updateStreak } from "@/services/api/streak";
 import { useAppStore } from "@/store/use-app-store";
 import { cn } from "@/lib/utils";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { incrementMockExamUsage } from "@/services/api/usage";
+import { canTakeMockExam } from "@/services/api/usage";
 
 const EXAM_SUBJECTS = [
   { label: "English", id: "11111111-1111-1111-1111-111111111111" },
@@ -47,7 +55,9 @@ type ExamPhase = "setup" | "exam" | "submitting";
 export function ExamPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-
+  const { isPro } = useUserPlan();
+  const [limitReached, setLimitReached] = useState(false);
+  const [remaining, setRemaining] = useState(3);
   const [phase, setPhase] = useState<ExamPhase>("setup");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -106,7 +116,9 @@ export function ExamPage() {
     }
 
     const sessionId = (session as { id: string }).id;
-
+    if (user) {
+      await incrementMockExamUsage(supabase, user.id);
+    }
     // Save all answers
     const answerRows = questions.map((q) => ({
       session_id: sessionId,
@@ -142,6 +154,23 @@ export function ExamPage() {
   async function startExam() {
     setLoading(true);
     resetExam();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { allowed, remaining } = await canTakeMockExam(
+        supabase,
+        user.id,
+        isPro,
+      );
+      if (!allowed) {
+        setLimitReached(true);
+        setLoading(false);
+        return;
+      }
+      setRemaining(remaining - 1);
+    }
 
     const allQuestions: Question[] = [];
 
@@ -212,7 +241,30 @@ export function ExamPage() {
                 ready before beginning.
               </p>
             </div>
+            {limitReached && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center space-y-3">
+                <p className="font-semibold text-red-700">
+                  Daily limit reached
+                </p>
+                <p className="text-sm text-slate-600">
+                  Free accounts can take 3 mock exams per day. Upgrade to Pro
+                  for unlimited exams.
+                </p>
+                <Button asChild size="sm">
+                  <NextLink href="/upgrade">
+                    <Sparkles className="h-4 w-4" />
+                    Upgrade to Pro
+                  </NextLink>
+                </Button>
+              </div>
+            )}
 
+            {!limitReached && !isPro && (
+              <p className="text-center text-xs text-slate-400">
+                Free plan: {remaining} mock exam{remaining !== 1 ? "s" : ""}{" "}
+                remaining today
+              </p>
+            )}
             <Button
               className="w-full"
               size="lg"
