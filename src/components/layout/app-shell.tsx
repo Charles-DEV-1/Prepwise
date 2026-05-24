@@ -3,16 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, Search, X, Crown, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appNav } from "@/config/routes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { createClient } from "@/services/supabase/client";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isPro, isLoading } = useUserPlan();
+  const [initials, setInitials] = useState("PW");
+  const [streak, setStreak] = useState<number | null>(null);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -20,16 +25,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
-
     return () => {
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
 
+  // Get real user initials and streak
+  useEffect(() => {
+    async function loadUserData() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Initials from name or email
+      const name = user.user_metadata?.full_name as string | undefined;
+      if (name) {
+        const parts = name.trim().split(" ");
+        const i =
+          parts.length >= 2
+            ? `${parts[0][0]}${parts[parts.length - 1][0]}`
+            : parts[0].slice(0, 2);
+        setInitials(i.toUpperCase());
+      } else if (user.email) {
+        setInitials(user.email.slice(0, 2).toUpperCase());
+      }
+
+      // Real streak
+      const { data: streakData } = await supabase
+        .from("streaks")
+        .select("current_count")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (streakData)
+        setStreak((streakData as { current_count: number }).current_count);
+    }
+    void loadUserData();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:block">
-        <SidebarContent pathname={pathname} />
+        <SidebarContent
+          pathname={pathname}
+          isPro={isPro}
+          isLoading={isLoading}
+        />
       </aside>
 
       {mobileMenuOpen && (
@@ -69,7 +112,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <SidebarContent pathname={pathname} compact />
+            <SidebarContent
+              pathname={pathname}
+              compact
+              isPro={isPro}
+              isLoading={isLoading}
+            />
           </aside>
         </div>
       )}
@@ -91,20 +139,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 prepwise
               </Link>
             </div>
+
             <div className="hidden h-10 max-w-md flex-1 items-center gap-2 rounded-xl border border-border bg-white px-3 text-sm text-muted-foreground shadow-sm md:flex">
               <Search className="h-4 w-4" />
               Search subjects, topics, sessions
             </div>
+
             <div className="flex items-center gap-2">
-              <Badge className="border-primary/20 bg-primary/10 text-primary">
-                12 day streak
-              </Badge>
+              {/* Plan badge in header */}
+              {!isLoading &&
+                (isPro ? (
+                  <Badge className="border-yellow-300 bg-yellow-50 text-yellow-700 gap-1">
+                    <Crown className="h-3 w-3" />
+                    Pro
+                  </Badge>
+                ) : (
+                  <Link href="/upgrade">
+                    <Badge className="border-primary/20 bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Upgrade
+                    </Badge>
+                  </Link>
+                ))}
+
+              {/* Real streak */}
+              {streak !== null && streak > 0 && (
+                <Badge className="border-amber-200 bg-amber-50 text-amber-700">
+                  🔥 {streak} day streak
+                </Badge>
+              )}
+
+              {/* Avatar */}
               <div className="h-9 w-9 rounded-full bg-softblue text-center text-sm font-semibold leading-9 text-primary">
-                PO
+                {initials}
               </div>
             </div>
           </div>
         </header>
+
         <main className="mx-auto max-w-7xl px-4 py-6 md:py-8">{children}</main>
       </div>
     </div>
@@ -114,9 +186,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function SidebarContent({
   pathname,
   compact = false,
+  isPro,
+  isLoading,
 }: {
   pathname: string;
   compact?: boolean;
+  isPro: boolean;
+  isLoading: boolean;
 }) {
   return (
     <>
@@ -158,20 +234,59 @@ function SidebarContent({
         })}
       </nav>
 
-      <div
-        className={cn(
-          "rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-softblue p-4 text-navy shadow-soft",
-          compact ? "mt-auto" : "absolute bottom-5 left-4 right-4",
-        )}
-      >
-        <Badge className="border-blue-200 bg-white text-primary">AI plan</Badge>
-        <p className="mt-3 text-sm font-semibold">
-          Unlock study plans and deeper weak-topic analysis.
-        </p>
-        <Button asChild size="sm" className="mt-4 w-full">
-          <Link href="/upgrade">Upgrade</Link>
-        </Button>
-      </div>
+      {/* Plan card at bottom of sidebar */}
+      {!isLoading && (
+        <div
+          className={cn(
+            "rounded-2xl border p-4 text-navy shadow-soft",
+            isPro
+              ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50"
+              : "border-blue-100 bg-gradient-to-br from-white to-softblue",
+            compact ? "mt-auto" : "absolute bottom-5 left-4 right-4",
+          )}
+        >
+          {isPro ? (
+            <>
+              <Badge className="border-yellow-300 bg-yellow-100 text-yellow-700 gap-1">
+                <Crown className="h-3 w-3" />
+                Prepwise Pro
+              </Badge>
+              <p className="mt-3 text-sm font-semibold text-navy">
+                You have full access
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                All features unlocked until Dec 2026
+              </p>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="mt-4 w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+              >
+                <Link href="/upgrade">View plan details</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Badge className="border-blue-200 bg-white text-primary">
+                Free plan
+              </Badge>
+              <p className="mt-3 text-sm font-semibold">
+                Unlock flashcards, unlimited exams & AI
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                One-time payment · ₦2,000 only
+              </p>
+              <Button asChild size="sm" className="mt-4 w-full">
+                <Link href="/upgrade">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Upgrade to Pro
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 }

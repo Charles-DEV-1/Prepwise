@@ -1,11 +1,13 @@
 "use client";
 
-import { Check, X, Sparkles, MessageCircle, Copy } from "lucide-react";
+import { Check, X, Sparkles, MessageCircle, Copy, Crown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/services/supabase/client";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import Link from "next/link";
 
 const FREE_FEATURES = [
   { text: "Unlimited practice mode", included: true },
@@ -32,16 +34,16 @@ const PRO_FEATURES = [
 ];
 
 const BANK_DETAILS = {
-  bank: "Palmpay",
-  accountNumber: "8024689712", // replace with your real account
-  accountName: "Ozebo Alfred", // replace with your name
+  bank: "Opay",
+  accountNumber: "9012345678",
+  accountName: "Prepwise",
 };
 
 export default function UpgradePage() {
+  const { isPro, isLoading } = useUserPlan();
   const [copied, setCopied] = useState(false);
   const [userEmail, setUserEmail] = useState("");
 
-  // Get user email on mount
   useState(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -59,16 +61,89 @@ export default function UpgradePage() {
     const message = encodeURIComponent(
       `Hi, I just paid for Prepwise Pro.\n\nMy account email: ${userEmail || "my email"}\n\nPlease activate my Pro access. Thank you!`,
     );
-    window.open(`https://wa.me/2349064020804?text=${message}`, "_blank");
+    window.open(`https://wa.me/2348164328697?text=${message}`, "_blank");
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    );
+  }
+
+  // ── PRO USER VIEW ─────────────────────────────────────────
+  if (isPro) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        {/* Pro hero */}
+        <div className="rounded-3xl bg-primary p-8 text-center text-white space-y-4">
+          <div className="flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+              <Crown className="h-8 w-8 text-yellow-300" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">You are on Prepwise Pro</h1>
+            <p className="mt-2 text-blue-100 text-sm">
+              Full access until December 2026. All features unlocked.
+            </p>
+          </div>
+          <Badge className="bg-white/20 text-white border-white/30 mx-auto">
+            ✓ Active subscription
+          </Badge>
+        </div>
+
+        {/* What you have */}
+        <Card className="border-border bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Your Pro features
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {PRO_FEATURES.map((f) => (
+                <div key={f.text} className="flex items-center gap-3 text-sm">
+                  <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
+                  <span className="text-slate-700">{f.text}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button asChild variant="outline">
+            <Link href="/flashcards">Open Flashcards</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/exam">Take Mock Exam</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/practice">Practice Mode</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/progress">View Progress</Link>
+          </Button>
+        </div>
+
+        <p className="text-center text-xs text-slate-400">
+          Questions? Message us on WhatsApp anytime.
+        </p>
+      </div>
+    );
+  }
+
+  // ── FREE USER VIEW ────────────────────────────────────────
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      {/* Header */}
       <div className="text-center space-y-3">
         <Badge className="border-amber-200 bg-amber-50 text-amber-700">
           <Sparkles className="mr-1 h-3 w-3" />
-          Limited time — JAMB 2025 season
+          Limited time — JAMB 2026 season
         </Badge>
         <h1 className="text-3xl font-bold text-navy">
           Upgrade to Prepwise Pro
@@ -79,9 +154,8 @@ export default function UpgradePage() {
         </p>
       </div>
 
-      {/* Pricing cards */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Free */}
+        {/* Free card */}
         <Card className="border-border bg-white shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Free</CardTitle>
@@ -111,7 +185,7 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        {/* Pro */}
+        {/* Pro card */}
         <Card className="border-primary bg-softblue shadow-soft relative overflow-hidden">
           <div className="absolute top-4 right-4">
             <Badge className="bg-primary text-white">Most popular</Badge>
@@ -123,7 +197,7 @@ export default function UpgradePage() {
             </CardTitle>
             <p className="text-4xl font-bold text-navy">₦2,000</p>
             <p className="text-sm text-slate-500">
-              One-time · Valid until after JAMB 2025
+              One-time · Valid until after JAMB 2026
             </p>
           </CardHeader>
           <CardContent>
@@ -140,8 +214,6 @@ export default function UpgradePage() {
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 How to pay
               </p>
-
-              {/* Bank details */}
               <div className="rounded-xl border border-border bg-white p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Bank</span>
@@ -161,11 +233,8 @@ export default function UpgradePage() {
                     <span className="font-bold text-navy text-base">
                       {BANK_DETAILS.accountNumber}
                     </span>
-                    <button
-                      onClick={copyAccount}
-                      className="text-primary hover:text-primary/80 transition"
-                    >
-                      <Copy className="h-4 w-4" />
+                    <button onClick={copyAccount}>
+                      <Copy className="h-4 w-4 text-primary" />
                     </button>
                   </div>
                 </div>
@@ -174,7 +243,6 @@ export default function UpgradePage() {
                 )}
               </div>
 
-              {/* Amount reminder */}
               <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-center">
                 <p className="text-sm font-semibold text-green-700">
                   Send exactly ₦2,000
@@ -184,7 +252,6 @@ export default function UpgradePage() {
                 </p>
               </div>
 
-              {/* WhatsApp button */}
               <Button
                 className="w-full gap-2 bg-green-600 hover:bg-green-700"
                 onClick={openWhatsApp}
@@ -194,8 +261,7 @@ export default function UpgradePage() {
               </Button>
 
               <p className="text-xs text-center text-slate-400">
-                Send your payment screenshot on WhatsApp and your account will
-                be activated within 30 minutes
+                Activated within 30 minutes of your WhatsApp message
               </p>
             </div>
           </CardContent>
@@ -221,7 +287,7 @@ export default function UpgradePage() {
             },
             {
               q: "When does Pro access expire?",
-              a: "Your access lasts until after JAMB 2025 results are released. Plenty of time.",
+              a: "Your access lasts until after JAMB 2026 results are released. Plenty of time.",
             },
           ].map(({ q, a }) => (
             <div
@@ -233,17 +299,6 @@ export default function UpgradePage() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Social proof */}
-      <div className="rounded-2xl border border-border bg-[#F8FAFC] p-6 text-center space-y-2">
-        <p className="font-semibold text-navy">
-          Join students already preparing smarter
-        </p>
-        <p className="text-sm text-slate-500">
-          Built by a Nigerian student who understands exactly what you need to
-          pass JAMB.
-        </p>
       </div>
     </div>
   );

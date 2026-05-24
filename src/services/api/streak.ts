@@ -1,36 +1,21 @@
-type StreakRow = {
-  id: string;
-  current_count: number;
-  longest_count: number;
-  last_activity_date: string | null;
-};
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-type StreakClient = {
-  from(table: string): {
-    select(columns: string): {
-      eq(column: string, value: string): {
-        single(): PromiseLike<{ data: StreakRow | null }>;
-      };
-    };
-    insert(values: unknown): PromiseLike<unknown>;
-    update(values: unknown): {
-      eq(column: string, value: string): PromiseLike<unknown>;
-    };
-  };
-};
-
-export async function updateStreak(supabase: unknown, userId: string) {
-  const client = supabase as StreakClient;
+export async function updateStreak(supabase: SupabaseClient, userId: string) {
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: streak } = await client
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  const { data: streak } = await supabase
     .from("streaks")
     .select("id, current_count, longest_count, last_activity_date")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
+  // No streak record yet — create one
   if (!streak) {
-    await client.from("streaks").insert({
+    await supabase.from("streaks").insert({
       user_id: userId,
       current_count: 1,
       longest_count: 1,
@@ -39,20 +24,29 @@ export async function updateStreak(supabase: unknown, userId: string) {
     return;
   }
 
+  // Already studied today — do nothing
   if (streak.last_activity_date === today) return;
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  // Studied yesterday — continue streak
+  if (streak.last_activity_date === yesterdayStr) {
+    const newCount = streak.current_count + 1;
+    await supabase
+      .from("streaks")
+      .update({
+        current_count: newCount,
+        longest_count: Math.max(newCount, streak.longest_count),
+        last_activity_date: today,
+      })
+      .eq("id", streak.id);
+    return;
+  }
 
-  const newCount =
-    streak.last_activity_date === yesterdayStr ? streak.current_count + 1 : 1;
-
-  await client
+  // Missed one or more days — reset streak to 1
+  await supabase
     .from("streaks")
     .update({
-      current_count: newCount,
-      longest_count: Math.max(newCount, streak.longest_count),
+      current_count: 1,
+      longest_count: streak.longest_count, // keep best streak ever
       last_activity_date: today,
     })
     .eq("id", streak.id);

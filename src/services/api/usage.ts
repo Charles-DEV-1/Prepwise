@@ -2,8 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const FREE_MOCK_LIMIT = 3;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function canTakeMockExam(
-  supabase: any,
+  supabase: SupabaseClient<any, any, any>,
   userId: string,
   isPro: boolean,
 ): Promise<{ allowed: boolean; remaining: number }> {
@@ -24,7 +25,11 @@ export async function canTakeMockExam(
   return { allowed: taken < FREE_MOCK_LIMIT, remaining };
 }
 
-export async function incrementMockExamUsage(supabase: any, userId: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function incrementMockExamUsage(
+  supabase: SupabaseClient<any, any, any>,
+  userId: string,
+) {
   const today = new Date().toISOString().split("T")[0];
 
   await supabase.from("daily_usage").upsert(
