@@ -73,6 +73,27 @@ create table public.streaks (
   created_at timestamptz not null default now()
 );
 
+create table public.weekly_quizzes (
+  id uuid primary key default gen_random_uuid(),
+  week_start date not null,
+  week_end date not null,
+  question_ids uuid[] not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table public.weekly_quiz_entries (
+  id uuid primary key default gen_random_uuid(),
+  quiz_id uuid not null references public.weekly_quizzes(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  score integer not null,
+  total_questions integer not null,
+  answers jsonb not null,
+  completed_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  unique(quiz_id, user_id)
+);
+
 alter table public.users enable row level security;
 alter table public.subjects enable row level security;
 alter table public.questions enable row level security;
@@ -80,6 +101,8 @@ alter table public.sessions enable row level security;
 alter table public.answers enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.streaks enable row level security;
+alter table public.weekly_quizzes enable row level security;
+alter table public.weekly_quiz_entries enable row level security;
 
 create policy "Users can read own profile" on public.users for select using (auth.uid() = id);
 create policy "Users can update own profile" on public.users for update using (auth.uid() = id);
@@ -97,3 +120,6 @@ create policy "Users can manage own subscriptions" on public.subscriptions for s
 create policy "Users can manage own streaks" on public.streaks for all using (auth.uid() = user_id);
 create policy "Subjects are readable" on public.subjects for select using (true);
 create policy "Questions are readable" on public.questions for select using (true);
+create policy "Weekly quizzes are readable" on public.weekly_quizzes for select using (true);
+create policy "Users can manage own weekly quiz entries" on public.weekly_quiz_entries for all using (auth.uid() = user_id);
+create policy "Weekly quiz entries are readable" on public.weekly_quiz_entries for select using (true);
