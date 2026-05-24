@@ -18,6 +18,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/services/supabase/client";
 import { updateStreak } from "@/services/api/streak";
 import { useAppStore } from "@/store/use-app-store";
@@ -128,7 +130,7 @@ export function ExamPage() {
     }));
 
     await supabase.from("answers").insert(answerRows as never);
-    await updateStreak(supabase, user.id);
+    await updateStreak(supabase as unknown as SupabaseClient, user.id);
 
     router.push(`/results/${sessionId}`);
   }, [questions, selectedAnswers, supabase, router]);
