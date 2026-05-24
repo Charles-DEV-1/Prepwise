@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +91,7 @@ export function PracticePage() {
     } = await supabase.auth.getUser();
     if (!user || !question) return;
     // Answer saving — will wire to sessions in next step
-    await updateStreak(supabase, user.id);
+    await updateStreak(supabase as unknown as SupabaseClient, user.id);
   }
 
   function nextQuestion() {

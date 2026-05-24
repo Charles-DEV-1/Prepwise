@@ -73,13 +73,13 @@ export async function updateProfileData(profile: Partial<ProfileData>) {
   if (userError || !user)
     throw userError ?? new Error("Missing authenticated user");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("users") as any)
+  const { error } = await supabase
+    .from("users")
     .update({
       full_name: profile.full_name,
       exam_type: profile.exam_type,
       target_score: profile.target_score,
-    })
+    } as never)
     .eq("id", user.id);
 
   if (error) throw error;
