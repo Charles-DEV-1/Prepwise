@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Menu, Search, X, Crown, Sparkles } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Search, X, Crown, Sparkles, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appNav } from "@/config/routes";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { createClient } from "@/services/supabase/client";
+import { UserMenu } from "./user-menu";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -169,10 +170,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Badge>
               )}
 
-              {/* Avatar */}
-              <div className="h-9 w-9 rounded-full bg-softblue text-center text-sm font-semibold leading-9 text-primary">
-                {initials}
-              </div>
+              {/* User Menu with Avatar */}
+              <UserMenu initials={initials} />
             </div>
           </div>
         </header>
@@ -242,7 +241,7 @@ function SidebarContent({
             isPro
               ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50"
               : "border-blue-100 bg-gradient-to-br from-white to-softblue",
-            compact ? "mt-auto" : "absolute bottom-5 left-4 right-4",
+            compact ? "mt-auto mb-4" : "absolute bottom-20 left-4 right-4",
           )}
         >
           {isPro ? (
@@ -287,6 +286,49 @@ function SidebarContent({
           )}
         </div>
       )}
+
+      {/* Logout button */}
+      {compact && (
+        <div className="mt-6 border-t border-border pt-4">
+          <LogoutButton />
+        </div>
+      )}
+
+      {!compact && (
+        <div className="absolute bottom-5 left-4 right-4">
+          <LogoutButton />
+        </div>
+      )}
     </>
+  );
+}
+
+function LogoutButton() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleLogout() {
+    setIsLoading(true);
+    try {
+      const { signOut } = await import("@/services/auth");
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleLogout}
+      disabled={isLoading}
+      className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <LogOut className="h-4 w-4" />
+      {isLoading ? "Logging out..." : "Logout"}
+    </button>
   );
 }
