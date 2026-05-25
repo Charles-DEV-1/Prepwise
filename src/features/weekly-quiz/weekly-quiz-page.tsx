@@ -172,54 +172,53 @@ export function WeeklyQuizPage() {
   }, [supabase]);
 
   async function loadLeaderboard(qId: string, userId: string) {
-    const { data: entries } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: entries } = await (supabase as any)
       .from("weekly_quiz_entries")
       .select("user_id, score, total_questions, completed_at")
       .eq("quiz_id", qId)
       .order("score", { ascending: false })
       .limit(10);
 
-    if (!entries) return;
+    if (!entries || entries.length === 0) return;
 
-    // Get user names
-    const userIds = entries.map(
-      (e: never) => (e as { user_id: string }).user_id,
-    );
-    const { data: users } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userIds = entries.map((e: any) => e.user_id as string);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: users } = await (supabase as any)
       .from("users")
       .select("id, full_name, email")
       .in("id", userIds);
 
     const userMap: Record<string, string> = {};
-    (users ?? []).forEach((u: never) => {
-      const user = u as { id: string; full_name?: string; email?: string };
-      const name =
-        user.full_name?.split(" ")[0] ?? user.email?.split("@")[0] ?? "Student";
-      userMap[user.id] = name;
-    });
 
-    const board: LeaderboardEntry[] = entries.map((e: never) => {
-      const entry = e as {
-        user_id: string;
-        score: number;
-        total_questions: number;
-        completed_at: string;
-      };
-      return {
-        user_id: entry.user_id,
-        score: entry.score,
-        total_questions: entry.total_questions,
-        percent:
-          entry.total_questions > 0
-            ? Math.round((entry.score / entry.total_questions) * 100)
-            : 0,
-        completed_at: entry.completed_at,
-        user_name: userMap[entry.user_id] ?? "Student",
-      };
-    });
+    if (users) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      users.forEach((u: any) => {
+        userMap[u.id] =
+          u.full_name?.split(" ")[0] ?? u.email?.split("@")[0] ?? "Student";
+      });
+    }
+
+    console.log("USER IDS QUERIED:", userIds);
+    console.log("USERS RETURNED:", users);
+    console.log("USER MAP:", userMap);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const board: LeaderboardEntry[] = entries.map((e: any) => ({
+      user_id: e.user_id,
+      score: e.score,
+      total_questions: e.total_questions,
+      percent:
+        e.total_questions > 0
+          ? Math.round((e.score / e.total_questions) * 100)
+          : 0,
+      completed_at: e.completed_at,
+      user_name: userMap[e.user_id] ?? "Student",
+    }));
 
     setLeaderboard(board);
-
     const mine = board.find((e) => e.user_id === userId);
     if (mine) setMyEntry(mine);
   }

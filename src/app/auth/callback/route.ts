@@ -38,12 +38,22 @@ export async function GET(request: NextRequest) {
         `${origin}/login?error=${encodeURIComponent(error.message)}`,
       );
     }
-
-    // Check if user has completed onboarding
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
+    if (user) {
+      const fullName = user.user_metadata?.full_name as string | undefined;
+      await supabase.from("users").upsert(
+        {
+          id: user.id,
+          email: user.email,
+          full_name: fullName ?? null,
+        },
+        { onConflict: "id", ignoreDuplicates: false },
+      );
+    }
+    // Check if user has completed onboarding
+    // reuse the authenticated user retrieved above
     if (user) {
       const { data: profile } = await supabase
         .from("users")

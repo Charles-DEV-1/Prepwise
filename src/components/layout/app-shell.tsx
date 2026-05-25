@@ -224,8 +224,7 @@ function SidebarContent({
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-softblue hover:text-primary",
-                active &&
-                  "bg-softblue text-primary shadow-sm hover:bg-softblue hover:text-primary",
+                active && "bg-softblue text-primary shadow-sm",
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -234,69 +233,6 @@ function SidebarContent({
           );
         })}
       </nav>
-
-      {/* Plan card at bottom of sidebar */}
-      <div
-        className={cn(
-          "mt-auto border-t border-border pt-4 space-y-4",
-          compact && "mt-6",
-        )}
-      >
-        {!isLoading && (
-          <div
-            className={cn(
-              "rounded-2xl border p-4 text-navy shadow-soft",
-              isPro
-                ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50"
-                : "border-blue-100 bg-gradient-to-br from-white to-softblue",
-            )}
-          >
-            {isPro ? (
-              <>
-                <Badge className="border-yellow-300 bg-yellow-100 text-yellow-700 gap-1">
-                  <Crown className="h-3 w-3" />
-                  Prepwise Pro
-                </Badge>
-                <p className="mt-3 text-sm font-semibold text-navy">
-                  You have full access
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  All features unlocked until Dec 2026
-                </p>
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  className="mt-4 w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                >
-                  <Link href="/upgrade">View plan details</Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Badge className="border-blue-200 bg-white text-primary">
-                  Free plan
-                </Badge>
-                <p className="mt-3 text-sm font-semibold">
-                  Unlock flashcards, unlimited exams & AI
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  One-time payment · ₦2,000 only
-                </p>
-                <Button asChild size="sm" className="mt-4 w-full">
-                  <Link href="/upgrade">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Upgrade to Pro
-                  </Link>
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Logout button */}
-        <LogoutButton />
-      </div>
     </>
   );
 }

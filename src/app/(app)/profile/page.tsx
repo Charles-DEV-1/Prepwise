@@ -1,11 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Loader2,
+  Crown,
+  Sparkles,
+  LogOut,
+  User,
+  Mail,
+  Target,
+  BookOpen,
+  Check,
+} from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useUserPlan } from "@/hooks/use-user-plan";
 import {
   getProfileData,
   updateProfileData,
@@ -13,9 +27,14 @@ import {
 } from "@/services/api/profile";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { isPro, isLoading: planLoading } = useUserPlan();
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [editData, setEditData] = useState<ProfileData | null>(null);
 
   useEffect(() => {
@@ -30,101 +49,253 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     }
-
-    loadProfile();
+    void loadProfile();
   }, []);
 
-  const handleSave = async () => {
+  async function handleSave() {
     if (!editData) return;
-
     try {
       setIsSaving(true);
-      await updateProfileData(editData);
       setError(null);
+      await updateProfileData(editData);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setIsSaving(false);
     }
-  };
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      const { signOut } = await import("@/services/auth");
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setIsLoggingOut(false);
+    }
+  }
 
   if (isLoading) {
     return (
-      <Card className="max-w-2xl border-border bg-white shadow-sm">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <Card className="max-w-2xl border-border bg-white shadow-sm">
-      <CardHeader>
-        <CardTitle>Profile settings</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {error}
+    <div className="mx-auto max-w-2xl space-y-6">
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold text-navy">Profile</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Manage your account and subscription
+        </p>
+      </div>
+
+      {/* Plan card */}
+      {!planLoading &&
+        (isPro ? (
+          <Card className="border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
+                    <Crown className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-navy">Prepwise Pro</p>
+                    <p className="text-xs text-slate-500">
+                      Active · Full access until Dec 2026
+                    </p>
+                  </div>
+                </div>
+                <Badge className="border-yellow-300 bg-yellow-100 text-yellow-700">
+                  Active
+                </Badge>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  "Unlimited mock exams",
+                  "All flashcards",
+                  "AI explanations",
+                  "Downloadable scorecard",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    className="flex items-center gap-1.5 text-xs text-slate-600"
+                  >
+                    <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-primary/20 bg-softblue shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-navy">Free plan</p>
+                    <p className="text-xs text-slate-500">
+                      3 mock exams/day · Basic features
+                    </p>
+                  </div>
+                </div>
+                <Button asChild size="sm">
+                  <Link href="/upgrade">Upgrade — ₦2,000</Link>
+                </Button>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Upgrade to unlock flashcards, unlimited mock exams, and AI
+                explanations. One-time payment, valid until after JAMB 2026.
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+
+      {/* Profile details */}
+      <Card className="border-border bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <User className="h-5 w-5 text-primary" />
+            Personal details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+          {saved && (
+            <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-600 flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              Changes saved successfully
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-slate-400" />
+              Full name
+            </Label>
+            <Input
+              id="fullName"
+              value={editData?.full_name ?? ""}
+              onChange={(e) =>
+                setEditData((prev) =>
+                  prev ? { ...prev, full_name: e.target.value } : null,
+                )
+              }
+              placeholder="Enter your full name"
+            />
           </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="fullName">Full name</Label>
-          <Input
-            id="fullName"
-            value={editData?.full_name || ""}
-            onChange={(e) =>
-              setEditData((prev) =>
-                prev ? { ...prev, full_name: e.target.value } : null,
-              )
-            }
-            placeholder="Enter your full name"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="examType">Exam type</Label>
-          <Input
-            id="examType"
-            value={editData?.exam_type || ""}
-            onChange={(e) =>
-              setEditData((prev) =>
-                prev ? { ...prev, exam_type: e.target.value } : null,
-              )
-            }
-            placeholder="e.g., JAMB"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="targetScore">Target score</Label>
-          <Input
-            id="targetScore"
-            type="number"
-            value={editData?.target_score || ""}
-            onChange={(e) =>
-              setEditData((prev) =>
-                prev
-                  ? { ...prev, target_score: parseInt(e.target.value) || 0 }
-                  : null,
-              )
-            }
-            placeholder="e.g., 280"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            value={editData?.email || ""}
-            disabled
-            placeholder="Your email"
-          />
-        </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save changes
-        </Button>
-      </CardContent>
-    </Card>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="flex items-center gap-1.5">
+              <Mail className="h-3.5 w-3.5 text-slate-400" />
+              Email
+            </Label>
+            <Input
+              id="email"
+              value={editData?.email ?? ""}
+              disabled
+              className="bg-slate-50 text-slate-500"
+            />
+            <p className="text-xs text-slate-400">
+              Email cannot be changed — linked to your Google account
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="examType" className="flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-slate-400" />
+                Exam type
+              </Label>
+              <Input
+                id="examType"
+                value={editData?.exam_type ?? ""}
+                onChange={(e) =>
+                  setEditData((prev) =>
+                    prev ? { ...prev, exam_type: e.target.value } : null,
+                  )
+                }
+                placeholder="e.g., JAMB"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="targetScore"
+                className="flex items-center gap-1.5"
+              >
+                <Target className="h-3.5 w-3.5 text-slate-400" />
+                Target score
+              </Label>
+              <Input
+                id="targetScore"
+                type="number"
+                value={editData?.target_score ?? ""}
+                onChange={(e) =>
+                  setEditData((prev) =>
+                    prev
+                      ? { ...prev, target_score: parseInt(e.target.value) || 0 }
+                      : null,
+                  )
+                }
+                placeholder="e.g., 280"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            className="w-full"
+          >
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? "Saving..." : "Save changes"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Logout */}
+      <Card className="border-border bg-white shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-navy">Sign out</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                You will be redirected to the login page
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 gap-2"
+              onClick={() => void handleLogout()}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+              {isLoggingOut ? "Signing out..." : "Sign out"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
