@@ -77,6 +77,10 @@ create table public.partners (
   commission_percent numeric,
   notes text,
   is_active boolean not null default true,
+  bulk_pro_active boolean not null default false,
+  bulk_pro_expires_at timestamptz,
+  wholesale_price_naira integer,
+  student_price_naira integer,
   created_at timestamptz not null default now()
 );
 

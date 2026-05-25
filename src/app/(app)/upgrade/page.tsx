@@ -49,7 +49,7 @@ const BANK_DETAILS = {
 };
 
 export default function UpgradePage() {
-  const { isPro, isLoading } = useUserPlan();
+  const { isPro, isLoading, isPartnerBulkPro, partnerName } = useUserPlan();
   const [copied, setCopied] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [referral, setReferral] = useState<UserReferral | null>(null);
@@ -100,11 +100,15 @@ export default function UpgradePage() {
           <div>
             <h1 className="text-2xl font-bold">You are on Prepwise Pro</h1>
             <p className="mt-2 text-blue-100 text-sm">
-              Full access until December 2026. All features unlocked.
+              {isPartnerBulkPro && partnerName
+                ? `Pro included through ${partnerName}. All features unlocked.`
+                : "Full access until December 2026. All features unlocked."}
             </p>
           </div>
           <Badge className="bg-white/20 text-white border-white/30 mx-auto">
-            ✓ Active subscription
+            {isPartnerBulkPro
+              ? "✓ Lesson center plan"
+              : "✓ Active subscription"}
           </Badge>
         </div>
 

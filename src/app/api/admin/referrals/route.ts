@@ -28,7 +28,12 @@ export async function GET() {
   const [{ data: users }, { data: partners }, { data: subs }] =
     await Promise.all([
       admin.from("users").select("id, email, full_name").in("id", userIds),
-      admin.from("partners").select("id, name").in("id", partnerIds),
+      admin
+        .from("partners")
+        .select(
+          "id, name, bulk_pro_active, bulk_pro_expires_at, is_active, wholesale_price_naira, student_price_naira",
+        )
+        .in("id", partnerIds),
       admin
         .from("subscriptions")
         .select("user_id, plan, status")
@@ -38,19 +43,34 @@ export async function GET() {
     ]);
 
   const userMap = new Map((users ?? []).map((u) => [u.id, u]));
-  const partnerMap = new Map((partners ?? []).map((p) => [p.id, p.name]));
-  const proSet = new Set((subs ?? []).map((s) => s.user_id));
+  const partnerMap = new Map((partners ?? []).map((p) => [p.id, p]));
+  const individualProSet = new Set((subs ?? []).map((s) => s.user_id));
+
+  function partnerBulkActive(partnerId: string): boolean {
+    const p = partnerMap.get(partnerId);
+    if (!p?.is_active || !p.bulk_pro_active) return false;
+    if (!p.bulk_pro_expires_at) return true;
+    return new Date(p.bulk_pro_expires_at) > new Date();
+  }
 
   const result = rows.map((r) => {
     const user = userMap.get(r.user_id);
+    const partner = partnerMap.get(r.partner_id);
+    const hasIndividual = individualProSet.has(r.user_id);
+    const hasBulk = partnerBulkActive(r.partner_id);
+    let pro_status: "free" | "individual" | "partner_bulk" = "free";
+    if (hasIndividual) pro_status = "individual";
+    else if (hasBulk) pro_status = "partner_bulk";
+
     return {
       user_id: r.user_id,
       code: r.code,
       applied_at: r.applied_at,
-      partner_name: partnerMap.get(r.partner_id) ?? "Unknown",
+      partner_name: partner?.name ?? "Unknown",
       email: user?.email ?? null,
       full_name: user?.full_name ?? null,
-      is_pro: proSet.has(r.user_id),
+      is_pro: pro_status !== "free",
+      pro_status,
     };
   });
 

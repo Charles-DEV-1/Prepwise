@@ -13,6 +13,7 @@ type ReferralRow = {
   email: string | null;
   full_name: string | null;
   is_pro: boolean;
+  pro_status: "free" | "individual" | "partner_bulk";
 };
 
 export default function AdminReferralsPage() {
@@ -76,7 +77,7 @@ export default function AdminReferralsPage() {
                     <th className="pb-3 pr-4 font-medium">Partner</th>
                     <th className="pb-3 pr-4 font-medium">Code</th>
                     <th className="pb-3 pr-4 font-medium">Applied</th>
-                    <th className="pb-3 font-medium">Pro</th>
+                    <th className="pb-3 font-medium">Access</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -98,9 +99,13 @@ export default function AdminReferralsPage() {
                         {new Date(row.applied_at).toLocaleDateString()}
                       </td>
                       <td className="py-3">
-                        {row.is_pro ? (
+                        {row.pro_status === "partner_bulk" ? (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                            Pro (center)
+                          </Badge>
+                        ) : row.pro_status === "individual" ? (
                           <Badge className="bg-green-100 text-green-700 border-green-200">
-                            Pro
+                            Pro (direct)
                           </Badge>
                         ) : (
                           <Badge className="border-slate-200 bg-slate-100 text-slate-600">

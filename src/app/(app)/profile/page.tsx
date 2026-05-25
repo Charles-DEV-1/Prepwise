@@ -30,7 +30,12 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { isPro, isLoading: planLoading } = useUserPlan();
+  const {
+    isPro,
+    isLoading: planLoading,
+    isPartnerBulkPro,
+    partnerName: planPartnerName,
+  } = useUserPlan();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -117,7 +122,9 @@ export default function ProfilePage() {
                   <div>
                     <p className="font-semibold text-navy">Prepwise Pro</p>
                     <p className="text-xs text-slate-500">
-                      Active · Full access until Dec 2026
+                      {isPartnerBulkPro && planPartnerName
+                        ? `Included via ${planPartnerName} lesson center plan`
+                        : "Active · Full access until Dec 2026"}
                     </p>
                   </div>
                 </div>

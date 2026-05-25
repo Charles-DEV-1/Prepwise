@@ -22,10 +22,131 @@ type PartnerRow = {
   slug: string;
   city: string | null;
   is_active: boolean;
+  bulk_pro_active: boolean;
+  bulk_pro_expires_at: string | null;
+  wholesale_price_naira: number | null;
+  student_price_naira: number | null;
+  commission_percent: number | null;
   signups: number;
   pro_conversions: number;
   referral_codes: ReferralCodeRow[];
 };
+
+function PartnerBulkProPanel({
+  partner,
+  onSaved,
+}: {
+  partner: PartnerRow;
+  onSaved: () => void;
+}) {
+  const [bulkActive, setBulkActive] = useState(partner.bulk_pro_active);
+  const [expires, setExpires] = useState(
+    partner.bulk_pro_expires_at ? partner.bulk_pro_expires_at.slice(0, 10) : "",
+  );
+  const [wholesale, setWholesale] = useState(
+    partner.wholesale_price_naira?.toString() ?? "",
+  );
+  const [studentPrice, setStudentPrice] = useState(
+    partner.student_price_naira?.toString() ?? "",
+  );
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/partners/${partner.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bulk_pro_active: bulkActive,
+          bulk_pro_expires_at: expires ? new Date(expires).toISOString() : null,
+          wholesale_price_naira: wholesale ? parseInt(wholesale, 10) : null,
+          student_price_naira: studentPrice ? parseInt(studentPrice, 10) : null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to save");
+      setMsg(
+        bulkActive
+          ? "Bulk Pro ON — all referred students now get Pro"
+          : "Bulk Pro OFF — referred students are on Free (unless they paid directly)",
+      );
+      onSaved();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const margin =
+    wholesale && studentPrice
+      ? parseInt(studentPrice, 10) - parseInt(wholesale, 10)
+      : null;
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+      <p className="text-sm font-semibold text-navy">
+        Bulk Pro for all referred students
+      </p>
+      <p className="text-xs text-slate-600">
+        When ON, every student who signed up with this center&apos;s link gets
+        Pro automatically. When OFF, they stay on Free unless they pay Prepwise
+        directly.
+      </p>
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          checked={bulkActive}
+          onChange={(e) => setBulkActive(e.target.checked)}
+          className="rounded border-border"
+        />
+        Bulk Pro active for this center
+      </label>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Pro expires (optional)</Label>
+          <Input
+            type="date"
+            value={expires}
+            onChange={(e) => setExpires(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Center pays you (₦)</Label>
+          <Input
+            type="number"
+            placeholder="e.g. 50000"
+            value={wholesale}
+            onChange={(e) => setWholesale(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Center charges student (₦)</Label>
+          <Input
+            type="number"
+            placeholder="e.g. 1500"
+            value={studentPrice}
+            onChange={(e) => setStudentPrice(e.target.value)}
+          />
+        </div>
+      </div>
+      {margin != null && margin > 0 && (
+        <p className="text-xs text-green-700 font-medium">
+          Center margin per student: ₦{margin.toLocaleString()} (for your
+          records — payouts are manual)
+        </p>
+      )}
+      <Button size="sm" onClick={() => void save()} disabled={saving}>
+        {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+        Save bulk Pro settings
+      </Button>
+      {msg && <p className="text-xs text-slate-600">{msg}</p>}
+    </div>
+  );
+}
 
 export default function AdminPartnersPage() {
   const [partners, setPartners] = useState<PartnerRow[]>([]);
@@ -129,7 +250,8 @@ export default function AdminPartnersPage() {
       <div>
         <h1 className="text-2xl font-bold text-navy">Lesson center partners</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Create partners and referral codes for lesson center partnerships.
+          Create partners, referral links, and bulk Pro plans (center pays you →
+          all their students get Pro).
         </p>
       </div>
 
@@ -291,8 +413,17 @@ export default function AdminPartnersPage() {
                     <Badge className="border-border bg-white text-slate-600">
                       {partner.pro_conversions} Pro
                     </Badge>
+                    {partner.bulk_pro_active && (
+                      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                        Bulk Pro ON
+                      </Badge>
+                    )}
                   </div>
                 </div>
+                <PartnerBulkProPanel
+                  partner={partner}
+                  onSaved={() => void loadPartners()}
+                />
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-slate-500 uppercase">
                     Referral codes

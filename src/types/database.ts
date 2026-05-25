@@ -127,6 +127,10 @@ export type Database = {
           commission_percent: number | null;
           notes: string | null;
           is_active: boolean;
+          bulk_pro_active: boolean;
+          bulk_pro_expires_at: string | null;
+          wholesale_price_naira: number | null;
+          student_price_naira: number | null;
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["partners"]["Row"]> & {

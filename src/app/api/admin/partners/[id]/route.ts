@@ -23,6 +23,10 @@ export async function PATCH(
     "notes",
     "commission_percent",
     "is_active",
+    "bulk_pro_active",
+    "bulk_pro_expires_at",
+    "wholesale_price_naira",
+    "student_price_naira",
   ] as const;
 
   for (const field of fields) {
