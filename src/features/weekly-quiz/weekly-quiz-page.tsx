@@ -613,6 +613,12 @@ export function WeeklyQuizPage() {
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
           <Button asChild>
+            <Link href="/leaderboard">
+              <Trophy className="h-4 w-4" />
+              View full leaderboard
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/practice">
               <RotateCcw className="h-4 w-4" />
               Practice now

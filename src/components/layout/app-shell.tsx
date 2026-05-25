@@ -68,12 +68,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:block">
-        <SidebarContent
-          pathname={pathname}
-          isPro={isPro}
-          isLoading={isLoading}
-        />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:flex lg:flex-col">
+        <div className="flex-1 overflow-y-auto">
+          <SidebarContent
+            pathname={pathname}
+            isPro={isPro}
+            isLoading={isLoading}
+          />
+        </div>
       </aside>
 
       {mobileMenuOpen && (
@@ -234,71 +236,67 @@ function SidebarContent({
       </nav>
 
       {/* Plan card at bottom of sidebar */}
-      {!isLoading && (
-        <div
-          className={cn(
-            "rounded-2xl border p-4 text-navy shadow-soft",
-            isPro
-              ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50"
-              : "border-blue-100 bg-gradient-to-br from-white to-softblue",
-            compact ? "mt-auto mb-4" : "absolute bottom-20 left-4 right-4",
-          )}
-        >
-          {isPro ? (
-            <>
-              <Badge className="border-yellow-300 bg-yellow-100 text-yellow-700 gap-1">
-                <Crown className="h-3 w-3" />
-                Prepwise Pro
-              </Badge>
-              <p className="mt-3 text-sm font-semibold text-navy">
-                You have full access
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                All features unlocked until Dec 2026
-              </p>
-              <Button
-                asChild
-                size="sm"
-                variant="outline"
-                className="mt-4 w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-              >
-                <Link href="/upgrade">View plan details</Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Badge className="border-blue-200 bg-white text-primary">
-                Free plan
-              </Badge>
-              <p className="mt-3 text-sm font-semibold">
-                Unlock flashcards, unlimited exams & AI
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                One-time payment · ₦2,000 only
-              </p>
-              <Button asChild size="sm" className="mt-4 w-full">
-                <Link href="/upgrade">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Upgrade to Pro
-                </Link>
-              </Button>
-            </>
-          )}
-        </div>
-      )}
+      <div
+        className={cn(
+          "mt-auto border-t border-border pt-4 space-y-4",
+          compact && "mt-6",
+        )}
+      >
+        {!isLoading && (
+          <div
+            className={cn(
+              "rounded-2xl border p-4 text-navy shadow-soft",
+              isPro
+                ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50"
+                : "border-blue-100 bg-gradient-to-br from-white to-softblue",
+            )}
+          >
+            {isPro ? (
+              <>
+                <Badge className="border-yellow-300 bg-yellow-100 text-yellow-700 gap-1">
+                  <Crown className="h-3 w-3" />
+                  Prepwise Pro
+                </Badge>
+                <p className="mt-3 text-sm font-semibold text-navy">
+                  You have full access
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  All features unlocked until Dec 2026
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="mt-4 w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                >
+                  <Link href="/upgrade">View plan details</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Badge className="border-blue-200 bg-white text-primary">
+                  Free plan
+                </Badge>
+                <p className="mt-3 text-sm font-semibold">
+                  Unlock flashcards, unlimited exams & AI
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  One-time payment · ₦2,000 only
+                </p>
+                <Button asChild size="sm" className="mt-4 w-full">
+                  <Link href="/upgrade">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Upgrade to Pro
+                  </Link>
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
-      {/* Logout button */}
-      {compact && (
-        <div className="mt-6 border-t border-border pt-4">
-          <LogoutButton />
-        </div>
-      )}
-
-      {!compact && (
-        <div className="absolute bottom-5 left-4 right-4">
-          <LogoutButton />
-        </div>
-      )}
+        {/* Logout button */}
+        <LogoutButton />
+      </div>
     </>
   );
 }
