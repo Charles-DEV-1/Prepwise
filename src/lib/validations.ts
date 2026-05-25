@@ -14,6 +14,13 @@ export const onboardingSchema = z.object({
   subjects: z.array(z.string()).min(1, "Select at least one subject"),
   targetScore: z.coerce.number().min(1).max(400),
   examDate: z.string().min(1, "Choose your exam date"),
+  referralCode: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === "" || /^[A-Za-z0-9-]+$/.test(v),
+      "Use letters, numbers, and hyphens only",
+    ),
 });
 
 export type PhoneAuthValues = z.infer<typeof phoneAuthSchema>;

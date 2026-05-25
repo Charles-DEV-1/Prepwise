@@ -31,4 +31,7 @@ export const appNav = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export const adminNav = [{ label: "Admin", href: "/admin", icon: Shield }];
+export const adminNav = [
+  { label: "Admin", href: "/admin", icon: Shield },
+  { label: "Partners", href: "/admin/partners", icon: Shield },
+];

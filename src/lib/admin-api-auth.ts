@@ -1,18 +1,12 @@
-import { redirect } from "next/navigation";
+import { isAdminEmail } from "@/lib/admin-auth";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { AppShell } from "@/components/layout/app-shell";
-import { ReferralApplicator } from "@/components/referral/referral-applicator";
+import { NextResponse } from "next/server";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-export default async function AuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export async function getAdminSessionUser() {
   const cookieStore = await cookies();
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -36,14 +30,13 @@ export default async function AuthenticatedLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
+  if (!user?.email || !isAdminEmail(user.email)) {
+    return null;
   }
 
-  return (
-    <AppShell>
-      <ReferralApplicator />
-      {children}
-    </AppShell>
-  );
+  return user;
+}
+
+export function forbiddenResponse() {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }

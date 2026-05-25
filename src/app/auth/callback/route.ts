@@ -1,3 +1,4 @@
+import { applyReferralFromServerCookies } from "@/lib/referral-server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,6 +52,8 @@ export async function GET(request: NextRequest) {
         },
         { onConflict: "id", ignoreDuplicates: false },
       );
+
+      await applyReferralFromServerCookies();
     }
     // Check if user has completed onboarding
     // reuse the authenticated user retrieved above

@@ -13,8 +13,12 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-normal text-navy">Admin dashboard</h1>
-        <p className="mt-2 text-sm text-slate-600">Operational overview for content, users, sessions, and subscriptions.</p>
+        <h1 className="text-3xl font-bold tracking-normal text-navy">
+          Admin dashboard
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Operational overview for content, users, sessions, and subscriptions.
+        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {adminMetrics.map(({ label, value, icon: Icon }) => (
@@ -32,8 +36,27 @@ export default function AdminPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-border bg-white shadow-sm">
           <CardContent className="p-5">
+            <h2 className="font-bold text-navy">Lesson center partners</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Manage partners, referral codes, and signup links for
+              partnerships.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button asChild>
+                <Link href="/admin/partners">Manage partners</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/admin/referrals">View referrals</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-white shadow-sm">
+          <CardContent className="p-5">
             <h2 className="font-bold text-navy">Question operations</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Upload, review, and publish new exam question sets.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Upload, review, and publish new exam question sets.
+            </p>
             <Button asChild className="mt-5">
               <Link href="/admin/question-upload">Open uploader</Link>
             </Button>
@@ -42,7 +65,9 @@ export default function AdminPage() {
         <Card className="border-border bg-white shadow-sm">
           <CardContent className="p-5">
             <h2 className="font-bold text-navy">Analytics</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Review student activity, subject performance, and platform growth.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Review student activity, subject performance, and platform growth.
+            </p>
             <Button asChild variant="outline" className="mt-5">
               <Link href="/admin/analytics">View analytics</Link>
             </Button>
@@ -54,8 +79,17 @@ export default function AdminPage() {
           <CardTitle>Content queue</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {["Import 2025 JAMB Physics", "Review WAEC Biology explanations", "Publish NECO Chemistry set"].map((item) => (
-            <div key={item} className="rounded-2xl border border-border bg-[#F8FAFC] p-3 text-sm text-slate-600">{item}</div>
+          {[
+            "Import 2025 JAMB Physics",
+            "Review WAEC Biology explanations",
+            "Publish NECO Chemistry set",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl border border-border bg-[#F8FAFC] p-3 text-sm text-slate-600"
+            >
+              {item}
+            </div>
           ))}
         </CardContent>
       </Card>

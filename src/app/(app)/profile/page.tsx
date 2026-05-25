@@ -11,9 +11,11 @@ import {
   Mail,
   Target,
   BookOpen,
+  Building2,
   Check,
 } from "lucide-react";
 import Link from "next/link";
+import { getMyReferral, type UserReferral } from "@/services/api/referral";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,13 +38,18 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [editData, setEditData] = useState<ProfileData | null>(null);
+  const [referral, setReferral] = useState<UserReferral | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
       try {
         setIsLoading(true);
-        const data = await getProfileData();
+        const [data, ref] = await Promise.all([
+          getProfileData(),
+          getMyReferral(),
+        ]);
         setEditData(data);
+        setReferral(ref);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load profile");
       } finally {
@@ -269,6 +276,23 @@ export default function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
+
+      {referral && (
+        <Card className="border-border bg-white shadow-sm">
+          <CardContent className="p-5 flex items-start gap-3">
+            <Building2 className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <p className="font-semibold text-navy">Lesson center</p>
+              <p className="text-sm text-slate-600 mt-0.5">
+                {referral.partner_name}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Referral code: {referral.code}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Logout */}
       <Card className="border-border bg-white shadow-sm">

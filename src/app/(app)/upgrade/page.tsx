@@ -1,12 +1,21 @@
 "use client";
 
-import { Check, X, Sparkles, MessageCircle, Copy, Crown } from "lucide-react";
-import { useState } from "react";
+import {
+  Check,
+  X,
+  Sparkles,
+  MessageCircle,
+  Copy,
+  Crown,
+  Building2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/services/supabase/client";
 import { useUserPlan } from "@/hooks/use-user-plan";
+import { getMyReferral, type UserReferral } from "@/services/api/referral";
 import Link from "next/link";
 
 const FREE_FEATURES = [
@@ -43,13 +52,15 @@ export default function UpgradePage() {
   const { isPro, isLoading } = useUserPlan();
   const [copied, setCopied] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [referral, setReferral] = useState<UserReferral | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    void supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) setUserEmail(user.email);
     });
-  });
+    void getMyReferral().then(setReferral);
+  }, []);
 
   function copyAccount() {
     navigator.clipboard.writeText(BANK_DETAILS.accountNumber);
@@ -58,8 +69,11 @@ export default function UpgradePage() {
   }
 
   function openWhatsApp() {
+    const referralLines = referral
+      ? `\nLesson center: ${referral.partner_name}\nReferral code: ${referral.code}`
+      : "";
     const message = encodeURIComponent(
-      `Hi, I just paid for Prepwise Pro.\n\nMy account email: ${userEmail || "my email"}\n\nPlease activate my Pro access. Thank you!`,
+      `Hi, I just paid for Prepwise Pro.\n\nMy account email: ${userEmail || "my email"}${referralLines}\n\nPlease activate my Pro access. Thank you!`,
     );
     window.open(`https://wa.me/2348164328697?text=${message}`, "_blank");
   }
@@ -152,6 +166,15 @@ export default function UpgradePage() {
           One payment. Full access until after your JAMB exam. No monthly fees.
           No surprises.
         </p>
+        {referral && (
+          <div className="mx-auto max-w-md rounded-xl border border-blue-100 bg-softblue px-4 py-3 text-sm text-navy flex items-center justify-center gap-2">
+            <Building2 className="h-4 w-4 text-primary flex-shrink-0" />
+            <span>
+              Referred via <strong>{referral.partner_name}</strong> (
+              {referral.code})
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

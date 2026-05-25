@@ -20,14 +20,15 @@ export async function completeOnboarding(values: OnboardingValues) {
   if (userError || !user)
     throw userError ?? new Error("Missing authenticated user");
 
+  const { referralCode: _referralCode, ...profile } = values;
   const payload = {
     id: user.id,
     phone: user.phone,
     email: user.email,
-    exam_type: values.examType,
-    selected_subjects: values.subjects,
-    target_score: values.targetScore,
-    exam_date: values.examDate,
+    exam_type: profile.examType,
+    selected_subjects: profile.subjects,
+    target_score: profile.targetScore,
+    exam_date: profile.examDate,
     onboarding_completed: true,
   };
 
