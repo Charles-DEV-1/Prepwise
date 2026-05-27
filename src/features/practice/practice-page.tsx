@@ -21,6 +21,8 @@ const SUBJECTS = [
   { label: "Economics", id: "66666666-6666-6666-6666-666666666666" },
   { label: "Government", id: "77777777-7777-7777-7777-777777777777" },
   { label: "Literature", id: "88888888-8888-8888-8888-888888888888" },
+  { label: "CRS", id: "99999999-9999-9999-9999-999999999999" },
+  { label: "Geography", id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" },
 ];
 
 type Question = {
