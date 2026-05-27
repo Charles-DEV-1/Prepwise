@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCurrentStreak } from "@/services/api/streak";
 
 export async function getDashboardData(
   supabase: SupabaseClient,
   userId: string,
 ) {
   // Run all queries in parallel for speed
-  const [sessionsResult, profileResult, streakResult] = await Promise.all([
+  const [sessionsResult, profileResult, currentStreak] = await Promise.all([
     // All completed sessions
     supabase
       .from("sessions")
@@ -20,17 +21,11 @@ export async function getDashboardData(
       .eq("id", userId)
       .single(),
 
-    // Streak
-    supabase
-      .from("streaks")
-      .select("current_count, longest_count, last_activity_date")
-      .eq("user_id", userId)
-      .single(),
+    getCurrentStreak(supabase, userId),
   ]);
 
   const sessions = sessionsResult.data ?? [];
   const profile = profileResult.data;
-  const streak = streakResult.data;
 
   // Calculate stats
   const totalQuestionsAnswered = sessions.reduce(
@@ -124,7 +119,7 @@ export async function getDashboardData(
   return {
     averageScore,
     totalQuestionsAnswered,
-    streak: streak?.current_count ?? 0,
+    streak: currentStreak,
     daysUntilExam,
     examType: profile?.exam_type ?? "JAMB",
     targetScore: profile?.target_score ?? 200,

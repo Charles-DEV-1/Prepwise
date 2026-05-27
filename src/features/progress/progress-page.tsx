@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { createClient } from "@/services/supabase/client";
 import { getProgressData } from "@/services/api/progress";
+import { getCurrentStreak } from "@/services/api/streak";
 
 type Session = {
   id: string;
@@ -42,15 +43,7 @@ export function ProgressPage() {
 
       setSessions(progressData);
 
-      const { data: streakData } = await supabase
-        .from("streaks")
-        .select("current_count")
-        .eq("user_id", user.id)
-        .single();
-
-      setStreak(
-        (streakData as { current_count: number } | null)?.current_count || 0,
-      );
+      setStreak(await getCurrentStreak(supabase, user.id));
     }
 
     loadData();

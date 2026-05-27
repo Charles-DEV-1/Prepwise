@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { Menu, Search, X, Crown, Sparkles, LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, Search, X, Crown, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appNav } from "@/config/routes";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { createClient } from "@/services/supabase/client";
+import { getCurrentStreak } from "@/services/api/streak";
 import { UserMenu } from "./user-menu";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -54,14 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
 
       // Real streak
-      const { data: streakData } = await supabase
-        .from("streaks")
-        .select("current_count")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (streakData)
-        setStreak((streakData as { current_count: number }).current_count);
+      setStreak(await getCurrentStreak(supabase, user.id));
     }
     void loadUserData();
   }, []);
@@ -70,11 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#F8FAFC]">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:flex lg:flex-col">
         <div className="flex-1 overflow-y-auto">
-          <SidebarContent
-            pathname={pathname}
-            isPro={isPro}
-            isLoading={isLoading}
-          />
+          <SidebarContent pathname={pathname} />
         </div>
       </aside>
 
@@ -115,12 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <SidebarContent
-              pathname={pathname}
-              compact
-              isPro={isPro}
-              isLoading={isLoading}
-            />
+            <SidebarContent pathname={pathname} compact />
           </aside>
         </div>
       )}
@@ -187,13 +171,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function SidebarContent({
   pathname,
   compact = false,
-  isPro,
-  isLoading,
 }: {
   pathname: string;
   compact?: boolean;
-  isPro: boolean;
-  isLoading: boolean;
 }) {
   return (
     <>
@@ -234,35 +214,5 @@ function SidebarContent({
         })}
       </nav>
     </>
-  );
-}
-
-function LogoutButton() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function handleLogout() {
-    setIsLoading(true);
-    try {
-      const { signOut } = await import("@/services/auth");
-      await signOut();
-      router.push("/login");
-      router.refresh();
-    } catch (error) {
-      console.error("Logout failed:", error);
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleLogout}
-      disabled={isLoading}
-      className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <LogOut className="h-4 w-4" />
-      {isLoading ? "Logging out..." : "Logout"}
-    </button>
   );
 }

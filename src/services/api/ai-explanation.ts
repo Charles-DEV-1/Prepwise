@@ -5,31 +5,46 @@ export async function getAIExplanation(
   explanation: string,
   subject: string,
 ): Promise<string> {
-  // Call backend API endpoint instead of calling Groq directly
-  const response = await fetch("/api/ai/explanation", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      question,
-      options,
-      correctAnswer,
-      explanation,
-      subject,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 20_000);
 
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: "Unknown error" }));
-    throw new Error(error.error ?? "Failed to get AI explanation");
+  try {
+    const response = await fetch("/api/ai/explanation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+        options,
+        correctAnswer,
+        explanation,
+        subject,
+      }),
+      signal: controller.signal,
+    });
+
+    const data = (await response.json().catch(() => null)) as {
+      explanation?: string;
+      error?: string;
+    } | null;
+
+    if (!response.ok) {
+      throw new Error(data?.error ?? "AI explanation failed.");
+    }
+
+    return data?.explanation?.trim() || "Could not generate explanation.";
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("AI explanation timed out. Please try again.");
+    }
+
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Could not load AI explanation. Try again.",
+    );
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  const data = (await response.json()) as {
-    explanation?: string;
-  };
-
-  return data.explanation ?? "Could not generate explanation.";
 }
