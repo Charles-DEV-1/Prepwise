@@ -1,5 +1,6 @@
 "use client";
 
+import { AIExplanation } from "@/components/ui/ai-explanation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -269,6 +270,16 @@ export function PracticePage() {
                     {question.explanation}
                   </p>
                 </div>
+              )}
+
+              {submitted && (
+                <AIExplanation
+                  question={question.prompt}
+                  options={question.options}
+                  correctAnswer={question.correct_answer}
+                  explanation={question.explanation}
+                  subject={selectedSubject.label}
+                />
               )}
 
               {/* Action buttons */}

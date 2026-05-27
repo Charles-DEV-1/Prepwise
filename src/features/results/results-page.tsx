@@ -1,5 +1,6 @@
 "use client";
 
+import { AIExplanation } from "@/components/ui/ai-explanation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -724,6 +725,14 @@ export function ResultsPage({ id }: { id: string }) {
                         {answer.question.explanation}
                       </p>
                     )}
+                    <div className="pt-2">
+                      <AIExplanation
+                        question={answer.question?.prompt ?? ""}
+                        options={answer.question?.options ?? {}}
+                        correctAnswer={answer.question?.correct_answer ?? ""}
+                        explanation={answer.question?.explanation ?? ""}
+                      />
+                    </div>
                   </div>
                 ))}
                 {wrongAnswers.length > 5 && (
