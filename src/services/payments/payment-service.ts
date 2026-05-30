@@ -54,10 +54,12 @@ export async function createPayment(input: CreatePaymentInput) {
 
   const { error: insertError } = await supabase.from("payments").insert({
     user_id: input.userId,
+    flutterwave_tx_ref: txRef,
     tx_ref: txRef,
     plan_key: plan.key,
     amount: plan.amount,
     currency: plan.currency,
+    status: "pending",
     customer_email: input.email,
     metadata: {
       plan_name: plan.name,
@@ -99,6 +101,7 @@ export async function createPayment(input: CreatePaymentInput) {
       .from("payments")
       .update({
         status: "failed",
+        payment_link: null,
         failure_reason: checkout.message || "Flutterwave checkout failed.",
         provider_response: checkout,
       } as never)
@@ -108,7 +111,11 @@ export async function createPayment(input: CreatePaymentInput) {
 
   const { error: updateError } = await supabase
     .from("payments")
-    .update({ checkout_url: checkoutUrl, provider_response: checkout } as never)
+    .update({
+      checkout_url: checkoutUrl,
+      payment_link: checkoutUrl,
+      provider_response: checkout,
+    } as never)
     .eq("tx_ref", txRef);
 
   if (updateError) {
