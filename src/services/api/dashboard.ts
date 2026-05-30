@@ -1,28 +1,37 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentStreak } from "@/services/api/streak";
+import type { createClient } from "@/services/supabase/client";
+
+type AppSupabaseClient = ReturnType<typeof createClient>;
 
 export async function getDashboardData(
-  supabase: SupabaseClient,
+  supabase: AppSupabaseClient,
   userId: string,
 ) {
   // Run all queries in parallel for speed
-  const [sessionsResult, profileResult, currentStreak] = await Promise.all([
-    // All completed sessions
-    supabase
-      .from("sessions")
-      .select("id, score, total_questions, mode, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+  const [sessionsResult, profileResult, pointsResult, currentStreak] =
+    await Promise.all([
+      // All completed sessions
+      supabase
+        .from("sessions")
+        .select("id, score, total_questions, mode, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
 
-    // User profile (exam date, target score)
-    supabase
-      .from("users")
-      .select("exam_date, target_score, exam_type")
-      .eq("id", userId)
-      .single(),
+      // User profile (exam date, target score)
+      supabase
+        .from("users")
+        .select("exam_date, target_score, exam_type")
+        .eq("id", userId)
+        .single(),
 
-    getCurrentStreak(supabase, userId),
-  ]);
+      supabase
+        .from("user_points")
+        .select("total_points, rank")
+        .eq("user_id", userId)
+        .maybeSingle(),
+
+      getCurrentStreak(supabase, userId),
+    ]);
 
   const sessions = sessionsResult.data ?? [];
   const profile = profileResult.data;
@@ -126,5 +135,7 @@ export async function getDashboardData(
     recentSessions,
     weakTopics,
     hasSessions: sessions.length > 0,
+    totalPoints: pointsResult.data?.total_points ?? 0,
+    currentRank: pointsResult.data?.rank ?? "Beginner",
   };
 }

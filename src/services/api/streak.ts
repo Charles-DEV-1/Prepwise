@@ -1,7 +1,7 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { awardPoints } from "@/services/api/points";
+import type { createClient } from "@/services/supabase/client";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AppSupabaseClient = SupabaseClient<any, any, any>;
+type AppSupabaseClient = ReturnType<typeof createClient>;
 
 type StreakRow = {
   id: string;
@@ -53,7 +53,7 @@ export async function getCurrentStreak(
   if (streak.current_count !== 0) {
     await supabase
       .from("streaks")
-      .update({ current_count: 0 })
+      .update({ current_count: 0 } as never)
       .eq("id", streak.id);
   }
 
@@ -80,7 +80,7 @@ export async function updateStreak(
       current_count: 1,
       longest_count: 1,
       last_activity_date: today,
-    });
+    } as never);
     return;
   }
 
@@ -96,8 +96,10 @@ export async function updateStreak(
         current_count: newCount,
         longest_count: Math.max(newCount, streak.longest_count),
         last_activity_date: today,
-      })
+      } as never)
       .eq("id", streak.id);
+    // Award 5 points for maintaining streak
+    await awardPoints(supabase, userId, "streak");
     return;
   }
 
@@ -108,6 +110,6 @@ export async function updateStreak(
       current_count: 1,
       longest_count: streak.longest_count,
       last_activity_date: today,
-    })
+    } as never)
     .eq("id", streak.id);
 }

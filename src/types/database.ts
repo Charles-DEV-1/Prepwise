@@ -20,6 +20,10 @@ export type Database = {
           target_score: number | null;
           exam_date: string | null;
           onboarding_completed: boolean;
+          plan: "free" | "pro";
+          is_pro: boolean;
+          subscription_started_at: string | null;
+          subscription_expires_at: string | null;
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["users"]["Row"]> & {
@@ -107,12 +111,73 @@ export type Database = {
           status: "active" | "past_due" | "cancelled";
           current_period_end: string | null;
           referral_partner_id: string | null;
+          subscription_started_at: string | null;
+          subscription_expires_at: string | null;
+          provider: string | null;
+          provider_subscription_id: string | null;
+          updated_at: string;
           created_at: string;
         };
         Insert: Partial<
           Database["public"]["Tables"]["subscriptions"]["Row"]
         > & { user_id: string };
         Update: Partial<Database["public"]["Tables"]["subscriptions"]["Row"]>;
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          tx_ref: string;
+          provider: string;
+          plan_key: string;
+          amount: number;
+          currency: string;
+          status: "pending" | "successful" | "failed" | "cancelled";
+          flutterwave_transaction_id: number | null;
+          flutterwave_flw_ref: string | null;
+          checkout_url: string | null;
+          customer_email: string | null;
+          metadata: Json;
+          provider_response: Json | null;
+          verification_attempts: number;
+          verified_at: string | null;
+          processed_at: string | null;
+          failure_reason: string | null;
+          idempotency_key: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["payments"]["Row"]> & {
+          user_id: string;
+          tx_ref: string;
+          plan_key: string;
+          amount: number;
+          idempotency_key: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["payments"]["Row"]>;
+        Relationships: [];
+      };
+      payment_webhook_events: {
+        Row: {
+          id: string;
+          provider: string;
+          event_key: string;
+          tx_ref: string | null;
+          flutterwave_transaction_id: number | null;
+          payload: Json;
+          processed_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["payment_webhook_events"]["Row"]
+        > & {
+          event_key: string;
+          payload: Json;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["payment_webhook_events"]["Row"]
+        >;
         Relationships: [];
       };
       partners: {
@@ -187,6 +252,120 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["streaks"]["Row"]>;
         Relationships: [];
       };
+      weekly_quizzes: {
+        Row: {
+          id: string;
+          week_start: string;
+          week_end: string;
+          question_ids: string[];
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["weekly_quizzes"]["Row"]
+        > & {
+          week_start: string;
+          week_end: string;
+          question_ids: string[];
+        };
+        Update: Partial<Database["public"]["Tables"]["weekly_quizzes"]["Row"]>;
+        Relationships: [];
+      };
+      weekly_quiz_entries: {
+        Row: {
+          id: string;
+          quiz_id: string;
+          user_id: string;
+          score: number;
+          total_questions: number;
+          answers: Json;
+          completed_at: string;
+          created_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["weekly_quiz_entries"]["Row"]
+        > & {
+          quiz_id: string;
+          user_id: string;
+          score: number;
+          total_questions: number;
+          answers: Json;
+          completed_at: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["weekly_quiz_entries"]["Row"]
+        >;
+        Relationships: [];
+      };
+      user_points: {
+        Row: {
+          user_id: string;
+          total_points: number;
+          rank: string;
+          sessions_completed: number;
+          quizzes_completed: number;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["user_points"]["Row"]> & {
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["user_points"]["Row"]>;
+        Relationships: [];
+      };
+      daily_usage: {
+        Row: {
+          user_id: string;
+          date: string;
+          mock_exams_taken: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["daily_usage"]["Row"]> & {
+          user_id: string;
+          date: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["daily_usage"]["Row"]>;
+        Relationships: [];
+      };
+      question_reports: {
+        Row: {
+          id: string;
+          question_id: string;
+          user_id: string;
+          reason: string;
+          details: string | null;
+          status: "pending" | "reviewed" | "resolved" | "dismissed";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["question_reports"]["Row"]
+        > & {
+          question_id: string;
+          user_id: string;
+          reason: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["question_reports"]["Row"]
+        >;
+        Relationships: [];
+      };
+      flashcards: {
+        Row: {
+          id: string;
+          front: string;
+          back: string;
+          is_premium: boolean;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["flashcards"]["Row"]> & {
+          front: string;
+          back: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["flashcards"]["Row"]>;
+        Relationships: [];
+      };
     };
     Views: {
       partner_referral_stats: {
@@ -204,6 +383,40 @@ export type Database = {
       apply_referral_code: {
         Args: { p_code: string };
         Returns: Json;
+      };
+      add_user_points: {
+        Args: {
+          p_user_id: string;
+          p_points: number;
+          p_session_type: "practice" | "mock" | "quiz" | "streak";
+        };
+        Returns: undefined;
+      };
+      increment_mock_exam_usage: {
+        Args: { p_user_id: string; p_date: string };
+        Returns: undefined;
+      };
+      process_successful_payment: {
+        Args: {
+          p_tx_ref: string;
+          p_flutterwave_transaction_id: number;
+          p_provider_response: Json;
+          p_verified_at?: string;
+        };
+        Returns: Json;
+      };
+      get_random_questions: {
+        Args: { p_subject_id: string; p_limit: number };
+        Returns: Array<{
+          id: string;
+          prompt: string;
+          options: Json;
+          correct_answer: string;
+          explanation: string | null;
+          topic: string | null;
+          year: number | null;
+          subject_id: string;
+        }>;
       };
     };
     Enums: {

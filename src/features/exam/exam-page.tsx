@@ -18,8 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-
+import { awardPoints } from "@/services/api/points";
 import { createClient } from "@/services/supabase/client";
 import { updateStreak } from "@/services/api/streak";
 import { useAppStore } from "@/store/use-app-store";
@@ -27,6 +26,10 @@ import { cn } from "@/lib/utils";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { incrementMockExamUsage } from "@/services/api/usage";
 import { canTakeMockExam } from "@/services/api/usage";
+import {
+  getRandomQuestionsBySubject,
+  type QuestionForSession,
+} from "@/services/api/questions";
 
 const EXAM_SUBJECTS = [
   { label: "English", id: "11111111-1111-1111-1111-111111111111" },
@@ -38,19 +41,9 @@ const EXAM_SUBJECTS = [
 const EXAM_DURATION = 100 * 60; // 100 minutes in seconds
 const QUESTIONS_PER_SUBJECT = 10; // 40 total
 
-type Question = {
-  id: string;
-  prompt: string;
-  options: Record<string, string>;
-  correct_answer: string;
-  explanation: string;
-  topic: string;
-  year: number;
+type Question = QuestionForSession & {
   subject_label: string;
-  subject_id: string;
 };
-
-type QuestionRow = Omit<Question, "subject_label">;
 
 type ExamPhase = "setup" | "exam" | "submitting";
 
@@ -128,9 +121,9 @@ export function ExamPage() {
       selected_answer: selectedAnswers[q.id] ?? null,
       is_correct: selectedAnswers[q.id] === q.correct_answer,
     }));
-
+    await awardPoints(supabase, user.id, "mock", scorePercent);
     await supabase.from("answers").insert(answerRows as never);
-    await updateStreak(supabase as unknown as SupabaseClient, user.id);
+    await updateStreak(supabase, user.id);
 
     router.push(`/results/${sessionId}`);
   }, [questions, selectedAnswers, supabase, router]);
@@ -174,29 +167,22 @@ export function ExamPage() {
       setRemaining(remaining - 1);
     }
 
-    const allQuestions: Question[] = [];
-
-    for (const subject of EXAM_SUBJECTS) {
-      const { data, error } = await supabase
-        .from("questions")
-        .select(
-          "id, prompt, options, correct_answer, explanation, topic, year, subject_id",
-        )
-        .eq("subject_id", subject.id);
-
-      if (!error && data) {
-        const questionRows = data as QuestionRow[];
-        const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
-        const picked = shuffled.slice(0, QUESTIONS_PER_SUBJECT).map((q) => ({
-          ...q,
+    const questionGroups = await Promise.all(
+      EXAM_SUBJECTS.map(async (subject) => {
+        const picked = await getRandomQuestionsBySubject(
+          supabase,
+          subject.id,
+          QUESTIONS_PER_SUBJECT,
+        );
+        return picked.map((question) => ({
+          ...question,
           subject_label: subject.label,
         }));
-        allQuestions.push(...picked);
-      }
-    }
+      }),
+    );
 
     // Shuffle all questions together
-    const shuffled = allQuestions.sort(() => Math.random() - 0.5);
+    const shuffled = questionGroups.flat().sort(() => Math.random() - 0.5);
     setQuestions(shuffled);
     setSeconds(EXAM_DURATION);
     setPhase("exam");

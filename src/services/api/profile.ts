@@ -20,20 +20,18 @@ export async function completeOnboarding(values: OnboardingValues) {
   if (userError || !user)
     throw userError ?? new Error("Missing authenticated user");
 
-  const { referralCode: _referralCode, ...profile } = values;
   const payload = {
     id: user.id,
     phone: user.phone,
     email: user.email,
-    exam_type: profile.examType,
-    selected_subjects: profile.subjects,
-    target_score: profile.targetScore,
-    exam_date: profile.examDate,
+    exam_type: values.examType,
+    selected_subjects: values.subjects,
+    target_score: values.targetScore,
+    exam_date: values.examDate,
     onboarding_completed: true,
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from("users") as any).upsert([payload]);
+  const { error } = await supabase.from("users").upsert([payload] as never);
 
   if (error) throw error;
 }
@@ -48,13 +46,14 @@ export async function getProfileData(): Promise<ProfileData> {
   if (userError || !user)
     throw userError ?? new Error("Missing authenticated user");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.from("users") as any)
+  const { data: profileRow, error } = await supabase
+    .from("users")
     .select("full_name, exam_type, target_score, email")
     .eq("id", user.id)
     .single();
 
   if (error) throw error;
+  const data = profileRow as ProfileData | null;
 
   return {
     full_name: data?.full_name || user.user_metadata?.full_name || "",

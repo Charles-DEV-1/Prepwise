@@ -53,6 +53,23 @@ export default function AdminPage() {
         </Card>
         <Card className="border-border bg-white shadow-sm">
           <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-navy">Question reports</h2>
+              <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full">
+                New
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Review questions flagged by students as wrong, confusing, or
+              having errors.
+            </p>
+            <Button asChild className="mt-5">
+              <Link href="/admin/reports">View reports</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-white shadow-sm">
+          <CardContent className="p-5">
             <h2 className="font-bold text-navy">Question operations</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Upload, review, and publish new exam question sets.

@@ -1,17 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import {
-  Trophy,
-  Medal,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Crown,
-  Sparkles,
-  RotateCcw,
-} from "lucide-react";
+import { Trophy, Clock, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { awardPoints } from "@/services/api/points";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +22,10 @@ type Question = {
   subject_name?: string;
 };
 
+type QuestionWithSubjectRow = Question & {
+  subject?: { name?: string | null } | { name?: string | null }[] | null;
+};
+
 type LeaderboardEntry = {
   user_id: string;
   score: number;
@@ -37,6 +33,34 @@ type LeaderboardEntry = {
   percent: number;
   completed_at: string;
   user_name: string;
+  rank_name?: string;
+  rank_emoji?: string;
+};
+
+type WeeklyQuizEntryRow = {
+  user_id: string;
+  score: number;
+  total_questions: number;
+  completed_at: string;
+};
+
+type UserNameRow = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+};
+
+type UserPointsRow = {
+  user_id: string;
+  rank: string | null;
+};
+
+const RANK_EMOJIS: Record<string, string> = {
+  Beginner: "B",
+  Studious: "S",
+  Sharp: "SH",
+  Genius: "G",
+  Legend: "L",
 };
 
 type Phase =
@@ -48,7 +72,7 @@ type Phase =
   | "no_quiz";
 
 export function WeeklyQuizPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [quizId, setQuizId] = useState<string | null>(null);
@@ -60,10 +84,75 @@ export function WeeklyQuizPage() {
   const [score, setScore] = useState(0);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserName, setCurrentUserName] = useState("You");
   const [myEntry, setMyEntry] = useState<LeaderboardEntry | null>(null);
   const [weekLabel, setWeekLabel] = useState("");
   const [timeLeft, setTimeLeft] = useState("");
+
+  const loadLeaderboard = useCallback(
+    async (qId: string, userId: string) => {
+      const { data: entryRows } = await supabase
+        .from("weekly_quiz_entries")
+        .select("user_id, score, total_questions, completed_at")
+        .eq("quiz_id", qId)
+        .order("score", { ascending: false })
+        .limit(10);
+      const entries = entryRows as WeeklyQuizEntryRow[] | null;
+
+      if (!entries || entries.length === 0) return;
+
+      const userIds = entries.map((entry) => entry.user_id);
+
+      const { data: userRows } = await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .in("id", userIds);
+      const users = userRows as UserNameRow[] | null;
+
+      const userMap: Record<string, string> = {};
+
+      (users ?? []).forEach((user) => {
+        userMap[user.id] =
+          user.full_name?.split(" ")[0] ??
+          user.email?.split("@")[0] ??
+          "Student";
+      });
+
+      const { data: pointsRows } = await supabase
+        .from("user_points")
+        .select("user_id, rank")
+        .in("user_id", userIds);
+      const pointsData = pointsRows as UserPointsRow[] | null;
+
+      const rankMap: Record<string, string> = {};
+
+      (pointsData ?? []).forEach((points) => {
+        rankMap[points.user_id] = points.rank ?? "Beginner";
+      });
+
+      const board: LeaderboardEntry[] = entries.map((entry) => {
+        const rankName = rankMap[entry.user_id] ?? "Beginner";
+
+        return {
+          user_id: entry.user_id,
+          score: entry.score,
+          total_questions: entry.total_questions,
+          percent:
+            entry.total_questions > 0
+              ? Math.round((entry.score / entry.total_questions) * 100)
+              : 0,
+          completed_at: entry.completed_at,
+          user_name: userMap[entry.user_id] ?? "Student",
+          rank_name: rankName,
+          rank_emoji: RANK_EMOJIS[rankName] ?? RANK_EMOJIS.Beginner,
+        };
+      });
+
+      setLeaderboard(board);
+      const mine = board.find((entry) => entry.user_id === userId);
+      if (mine) setMyEntry(mine);
+    },
+    [supabase],
+  );
 
   const loadQuiz = useCallback(async () => {
     const {
@@ -72,11 +161,6 @@ export function WeeklyQuizPage() {
     if (!user) return;
 
     setCurrentUserId(user.id);
-    const name = user.user_metadata?.full_name as string | undefined;
-    setCurrentUserName(
-      name?.split(" ")[0] ?? user.email?.split("@")[0] ?? "You",
-    );
-
     // Get current active quiz
     const today = new Date().toISOString().split("T")[0];
     const { data: quiz } = (await supabase
@@ -155,11 +239,13 @@ export function WeeklyQuizPage() {
       .in("id", quiz.question_ids);
 
     if (questionData) {
-      const mapped = questionData.map((q: never) => ({
-        ...(q as object),
-        subject_name:
-          (q as { subject?: { name?: string } }).subject?.name ?? "General",
-      })) as Question[];
+      const mapped = (questionData as QuestionWithSubjectRow[]).map((q) => {
+        const subject = Array.isArray(q.subject) ? q.subject[0] : q.subject;
+        return {
+          ...q,
+          subject_name: subject?.name ?? "General",
+        };
+      }) as Question[];
       // Keep original quiz order
       const ordered = (quiz.question_ids as string[])
         .map((qid) => mapped.find((q) => q.id === qid))
@@ -169,59 +255,7 @@ export function WeeklyQuizPage() {
 
     await loadLeaderboard(quiz.id, user.id);
     setPhase("intro");
-  }, [supabase]);
-
-  async function loadLeaderboard(qId: string, userId: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: entries } = await (supabase as any)
-      .from("weekly_quiz_entries")
-      .select("user_id, score, total_questions, completed_at")
-      .eq("quiz_id", qId)
-      .order("score", { ascending: false })
-      .limit(10);
-
-    if (!entries || entries.length === 0) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userIds = entries.map((e: any) => e.user_id as string);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: users } = await (supabase as any)
-      .from("users")
-      .select("id, full_name, email")
-      .in("id", userIds);
-
-    const userMap: Record<string, string> = {};
-
-    if (users) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      users.forEach((u: any) => {
-        userMap[u.id] =
-          u.full_name?.split(" ")[0] ?? u.email?.split("@")[0] ?? "Student";
-      });
-    }
-
-    console.log("USER IDS QUERIED:", userIds);
-    console.log("USERS RETURNED:", users);
-    console.log("USER MAP:", userMap);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const board: LeaderboardEntry[] = entries.map((e: any) => ({
-      user_id: e.user_id,
-      score: e.score,
-      total_questions: e.total_questions,
-      percent:
-        e.total_questions > 0
-          ? Math.round((e.score / e.total_questions) * 100)
-          : 0,
-      completed_at: e.completed_at,
-      user_name: userMap[e.user_id] ?? "Student",
-    }));
-
-    setLeaderboard(board);
-    const mine = board.find((e) => e.user_id === userId);
-    if (mine) setMyEntry(mine);
-  }
+  }, [loadLeaderboard, supabase]);
 
   useEffect(() => {
     void loadQuiz();
@@ -268,8 +302,7 @@ export function WeeklyQuizPage() {
 
     // Save entry to weekly_quiz_entries
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await supabase.from("weekly_quiz_entries").insert([
+      const { error } = await supabase.from("weekly_quiz_entries").insert([
         {
           quiz_id: quizId,
           user_id: user.id,
@@ -278,13 +311,20 @@ export function WeeklyQuizPage() {
           answers: finalAnswers,
           completed_at: new Date().toISOString(),
         },
-      ] as any);
+      ] as never);
 
-      if (response?.error) {
-        console.error("Error saving quiz entry:", response.error);
+      if (error) {
+        console.error("Error saving quiz entry:", error);
         // Still continue to results even if save fails
       }
 
+      const {
+        data: { user: quizUser },
+      } = await supabase.auth.getUser();
+      if (quizUser) {
+        const quizPercent = Math.round((correct / questions.length) * 100);
+        await awardPoints(supabase, quizUser.id, "quiz", quizPercent);
+      }
       await loadLeaderboard(quizId, user.id);
       setPhase("results");
     } catch (err) {
@@ -304,7 +344,7 @@ export function WeeklyQuizPage() {
   if (phase === "loading") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-slate-500">Loading this week's quiz...</p>
+        <p className="text-slate-500">Loading this week&apos;s quiz...</p>
       </div>
     );
   }
@@ -339,7 +379,7 @@ export function WeeklyQuizPage() {
             Weekly Quiz
           </Badge>
           <h1 className="text-2xl font-bold text-navy">
-            This week's challenge
+            This week&apos;s challenge
           </h1>
           <p className="text-slate-500 text-sm">{weekLabel}</p>
         </div>
@@ -508,7 +548,7 @@ export function WeeklyQuizPage() {
                 >
                   {selectedAnswer === question.correct_answer
                     ? "✓ Correct!"
-                    : `✗ Wrong — Answer is ${question.correct_answer}`}
+                    : `Wrong - Answer is ${question.correct_answer}`}
                 </p>
                 <p className="text-xs text-slate-600 leading-5">
                   {question.explanation}
@@ -579,7 +619,7 @@ export function WeeklyQuizPage() {
           )}
           {phase === "already_done" && (
             <p className="text-xs text-slate-400">
-              You already completed this week's quiz
+              You already completed this week&apos;s quiz
             </p>
           )}
         </div>
@@ -589,7 +629,7 @@ export function WeeklyQuizPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
-              This week's leaderboard
+              This week&apos;s leaderboard
               <span className="ml-auto text-xs font-normal text-slate-400">
                 {weekLabel}
               </span>
@@ -678,7 +718,7 @@ function LeaderboardList({
                     isMe ? "text-primary" : "text-navy",
                   )}
                 >
-                  {entry.user_name}
+                  {entry.rank_emoji} {entry.user_name}
                   {isMe && (
                     <span className="ml-2 text-xs font-normal text-primary/70">
                       (you)

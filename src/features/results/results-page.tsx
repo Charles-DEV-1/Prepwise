@@ -5,13 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   RotateCcw,
-  Share2,
   Trophy,
   CheckCircle2,
   XCircle,
   Download,
   MessageCircle,
 } from "lucide-react";
+import { ReportQuestion } from "@/components/ui/report-question";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -329,7 +329,7 @@ export function ResultsPage({ id }: { id: string }) {
       .eq("session_id", id);
 
     if (answerData) {
-      const rows = answerData as AnswerWithSubject[];
+      const rows = answerData as unknown as AnswerWithSubject[];
       setAnswers(rows);
 
       const stats: Record<string, { correct: number; total: number }> = {};
@@ -448,7 +448,7 @@ export function ResultsPage({ id }: { id: string }) {
                 ? "Great performance! Keep practising to improve further."
                 : score >= 40
                   ? "Good effort. Focus on your weak subjects to improve."
-                  : "Keep going — consistent practice will raise your score."}
+                  : "Keep going - consistent practice will raise your score."}
             </p>
           </div>
 
@@ -661,8 +661,8 @@ export function ResultsPage({ id }: { id: string }) {
               `Correct answers: ${correctCount}`,
               `Wrong answers: ${wrongAnswers.length}`,
               `Score: ${score}%`,
-              `Weakest subject: ${[...subjectStats].sort((a, b) => a.percent - b.percent)[0]?.label ?? "—"}`,
-              `Strongest subject: ${[...subjectStats].sort((a, b) => b.percent - a.percent)[0]?.label ?? "—"}`,
+              `Weakest subject: ${[...subjectStats].sort((a, b) => a.percent - b.percent)[0]?.label ?? "-"}`,
+              `Strongest subject: ${[...subjectStats].sort((a, b) => b.percent - a.percent)[0]?.label ?? "-"}`,
             ].map((item) => (
               <div
                 key={item}
@@ -733,6 +733,7 @@ export function ResultsPage({ id }: { id: string }) {
                         explanation={answer.question?.explanation ?? ""}
                       />
                     </div>
+                    <ReportQuestion questionId={answer.question?.id ?? ""} />
                   </div>
                 ))}
                 {wrongAnswers.length > 5 && (

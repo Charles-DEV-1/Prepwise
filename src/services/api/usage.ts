@@ -1,10 +1,11 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { createClient } from "@/services/supabase/client";
+
+type AppSupabaseClient = ReturnType<typeof createClient>;
 
 const FREE_MOCK_LIMIT = 3;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function canTakeMockExam(
-  supabase: SupabaseClient<any, any, any>,
+  supabase: AppSupabaseClient,
   userId: string,
   isPro: boolean,
 ): Promise<{ allowed: boolean; remaining: number }> {
@@ -25,26 +26,12 @@ export async function canTakeMockExam(
   return { allowed: taken < FREE_MOCK_LIMIT, remaining };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function incrementMockExamUsage(
-  supabase: SupabaseClient<any, any, any>,
+  supabase: AppSupabaseClient,
   userId: string,
 ) {
   const today = new Date().toISOString().split("T")[0];
 
-  await supabase.from("daily_usage").upsert(
-    {
-      user_id: userId,
-      date: today,
-      mock_exams_taken: 1,
-    },
-    {
-      onConflict: "user_id,date",
-      ignoreDuplicates: false,
-    },
-  );
-
-  // Increment the count
   await supabase.rpc("increment_mock_exam_usage", {
     p_user_id: userId,
     p_date: today,

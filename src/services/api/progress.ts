@@ -10,16 +10,7 @@ export async function getProgressData(userId: string) {
       id,
       score,
       total_questions,
-      created_at,
-      answers (
-        is_correct,
-        question:questions (
-          subject_id,
-          subjects (
-            name
-          )
-        )
-      )
+      created_at
     `,
     )
     .eq("user_id", userId)

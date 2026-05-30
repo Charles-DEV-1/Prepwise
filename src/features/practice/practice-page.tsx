@@ -1,8 +1,9 @@
 "use client";
 
+import { awardPoints } from "@/services/api/points";
+import { ReportQuestion } from "@/components/ui/report-question";
 import { AIExplanation } from "@/components/ui/ai-explanation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/services/supabase/client";
 import { updateStreak } from "@/services/api/streak";
+import {
+  getRandomQuestionsBySubject,
+  type QuestionForSession,
+} from "@/services/api/questions";
 import { cn } from "@/lib/utils";
 
 const SUBJECTS = [
@@ -25,25 +30,21 @@ const SUBJECTS = [
   { label: "Geography", id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" },
 ];
 
-type Question = {
-  id: string;
-  prompt: string;
-  options: Record<string, string>;
-  correct_answer: string;
-  explanation: string;
-  topic: string;
-  year: number;
-};
+type PointsSupabaseClient = Parameters<typeof awardPoints>[0];
 
 export function PracticePage() {
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<QuestionForSession[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<string, string>
+  >({});
+  const [sessionSaved, setSessionSaved] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -54,19 +55,12 @@ export function PracticePage() {
     setSubmitted(false);
     setScore(0);
     setAnswered(0);
+    setSelectedAnswers({});
+    setSessionSaved(false);
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, prompt, options, correct_answer, explanation, topic, year")
-      .eq("subject_id", selectedSubject.id)
-      .order("year", { ascending: false });
-
-    if (!error && data) {
-      // Shuffle and take 25
-      const questionRows = data as Question[];
-      const shuffled = [...questionRows].sort(() => Math.random() - 0.5);
-      setQuestions(shuffled.slice(0, 25));
-    }
+    setQuestions(
+      await getRandomQuestionsBySubject(supabase, selectedSubject.id, 25),
+    );
     setLoading(false);
   }, [selectedSubject.id, supabase]);
 
@@ -80,23 +74,83 @@ export function PracticePage() {
 
   function handleSubmit() {
     if (!selected || !question) return;
-    setSubmitted(true);
-    setAnswered((a) => a + 1);
-    if (selected === question.correct_answer) {
-      setScore((s) => s + 1);
-    }
+    const updatedAnswers = { ...selectedAnswers, [question.id]: selected };
+    const nextAnswered = answered + 1;
+    const nextScore = score + (selected === question.correct_answer ? 1 : 0);
+    const nextAccuracy = Math.round((nextScore / nextAnswered) * 100);
 
-    // Save answer to Supabase (fire and forget)
-    void saveAnswer();
+    setSubmitted(true);
+    setAnswered(nextAnswered);
+    setSelectedAnswers(updatedAnswers);
+    if (selected === question.correct_answer) setScore(nextScore);
+
+    if (questionIndex === questions.length - 1) {
+      void savePracticeSession(updatedAnswers, nextAccuracy);
+    } else {
+      void updatePracticeStreak();
+    }
   }
 
-  async function saveAnswer() {
+  async function updatePracticeStreak() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user || !question) return;
-    // Answer saving — will wire to sessions in next step
-    await updateStreak(supabase as unknown as SupabaseClient, user.id);
+    if (!user) return;
+    await updateStreak(supabase, user.id);
+  }
+
+  async function savePracticeSession(
+    answers: Record<string, string>,
+    finalAccuracy: number,
+  ) {
+    if (sessionSaved) return;
+    setSessionSaved(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSessionSaved(false);
+      return;
+    }
+
+    const answeredQuestions = questions.filter((q) => answers[q.id]);
+    const { data: session, error: sessionError } = await supabase
+      .from("sessions")
+      .insert({
+        user_id: user.id,
+        mode: "practice",
+        score: finalAccuracy,
+        total_questions: answeredQuestions.length,
+        completed_at: new Date().toISOString(),
+      } as never)
+      .select("id")
+      .single();
+
+    if (sessionError || !session) {
+      setSessionSaved(false);
+      return;
+    }
+
+    const sessionId = (session as { id: string }).id;
+    const answerRows = answeredQuestions.map((q) => ({
+      session_id: sessionId,
+      question_id: q.id,
+      selected_answer: answers[q.id],
+      is_correct: answers[q.id] === q.correct_answer,
+    }));
+
+    if (answerRows.length > 0) {
+      await supabase.from("answers").insert(answerRows as never);
+    }
+
+    await updateStreak(supabase, user.id);
+    await awardPoints(
+      supabase as PointsSupabaseClient,
+      user.id,
+      "practice",
+      finalAccuracy,
+    );
   }
 
   function nextQuestion() {
@@ -283,6 +337,8 @@ export function PracticePage() {
                   subject={selectedSubject.label}
                 />
               )}
+
+              {submitted && <ReportQuestion questionId={question.id} />}
 
               {/* Action buttons */}
               <div className="mt-6 flex justify-end gap-3">

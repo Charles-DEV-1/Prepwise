@@ -20,7 +20,7 @@ import { getCurrentStreak } from "@/services/api/streak";
 
 type Session = {
   id: string;
-  score: number;
+  score: number | null;
   total_questions: number;
   created_at: string;
 };

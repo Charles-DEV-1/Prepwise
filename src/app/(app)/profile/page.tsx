@@ -13,9 +13,11 @@ import {
   BookOpen,
   Building2,
   Check,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { getMyReferral, type UserReferral } from "@/services/api/referral";
+import { createClient } from "@/services/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +29,14 @@ import {
   updateProfileData,
   type ProfileData,
 } from "@/services/api/profile";
+
+type RankInfo = {
+  name: string;
+  emoji: string;
+  points: number;
+  progress: number;
+  nextRank?: { name: string; min: number };
+};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -44,6 +54,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [editData, setEditData] = useState<ProfileData | null>(null);
   const [referral, setReferral] = useState<UserReferral | null>(null);
+  const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -62,6 +73,22 @@ export default function ProfilePage() {
       }
     }
     void loadProfile();
+  }, []);
+
+  useEffect(() => {
+    async function loadRank() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { getUserPoints } = await import("@/services/api/points");
+      const info = await getUserPoints(supabase, user.id);
+      setRankInfo(info);
+    }
+
+    void loadRank();
   }, []);
 
   async function handleSave() {
@@ -176,6 +203,54 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         ))}
+
+      {rankInfo && (
+        <Card className="border-border bg-white shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-softblue text-xl">
+                  {rankInfo.emoji}
+                </div>
+                <div>
+                  <p className="font-semibold text-navy">{rankInfo.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {rankInfo.points.toLocaleString()} total points
+                  </p>
+                </div>
+              </div>
+              <Badge className="border-primary/20 bg-primary/10 text-primary gap-1">
+                <Trophy className="h-3 w-3" />
+                Rank
+              </Badge>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>{rankInfo.name}</span>
+                {rankInfo.nextRank ? (
+                  <span>
+                    {rankInfo.nextRank.name} in{" "}
+                    {Math.max(
+                      0,
+                      rankInfo.nextRank.min - rankInfo.points,
+                    ).toLocaleString()}{" "}
+                    pts
+                  </span>
+                ) : (
+                  <span>Top rank reached</span>
+                )}
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${rankInfo.progress}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile details */}
       <Card className="border-border bg-white shadow-sm">

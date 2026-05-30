@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Lock, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ type Flashcard = {
 };
 
 export function FlashcardsPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { isPro, isLoading } = useUserPlan();
 
   const [index, setIndex] = useState(0);
@@ -46,7 +46,7 @@ export function FlashcardsPage() {
     }
 
     loadFlashcards();
-  }, [isPro, isLoading]);
+  }, [isPro, isLoading, supabase]);
 
   function nextCard() {
     setFlipped(false);
@@ -102,7 +102,7 @@ export function FlashcardsPage() {
                     </Badge>
                     <div className="flex flex-1 items-center justify-center">
                       <h2 className="text-center text-3xl font-bold text-navy">
-                        What is Avogadro's Number?
+                        What is Avogadro&apos;s Number?
                       </h2>
                     </div>
                     <p className="text-center text-sm text-slate-500">
@@ -126,7 +126,7 @@ export function FlashcardsPage() {
               <p className="mt-2 text-sm text-slate-500 max-w-sm">
                 Unlock all flashcard decks for English, Maths, Physics,
                 Chemistry, Biology, and Economics. Flip cards, track what you
-                know, focus on what you don't.
+                know, focus on what you don&apos;t.
               </p>
             </div>
             <Button asChild size="lg">

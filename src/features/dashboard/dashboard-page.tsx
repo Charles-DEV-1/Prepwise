@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   BookOpenCheck,
@@ -8,6 +9,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import { RankBadge } from "@/components/ui/rank-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +41,8 @@ type DashboardData = {
     accuracy: number;
   }[];
   hasSessions: boolean;
+  totalPoints: number;
+  currentRank: string;
 } | null;
 
 export function DashboardPage({
@@ -87,9 +91,19 @@ export function DashboardPage({
       {/* Welcome banner */}
       <section className="soft-blue-gradient relative overflow-hidden rounded-[2rem] border border-border p-6 shadow-soft md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
-        <Badge className="border-blue-200 bg-white text-primary">
-          {data?.examType ?? "JAMB"} preparation
-        </Badge>
+        <div className="relative flex items-center gap-3">
+          <Image
+            src="/brand/prepwise-logo-round.png"
+            alt="Prepwise logo"
+            width={44}
+            height={44}
+            className="rounded-full shadow-sm"
+            priority
+          />
+          <Badge className="border-blue-200 bg-white text-primary">
+            {data?.examType ?? "JAMB"} preparation
+          </Badge>
+        </div>
         <div className="relative mt-5 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-normal text-navy md:text-4xl">
@@ -120,6 +134,11 @@ export function DashboardPage({
                 </span>
                 . Keep up the momentum.
               </p>
+            )}
+            {data?.totalPoints !== undefined && (
+              <div className="mt-2">
+                <RankBadge points={data.totalPoints} showProgress size="md" />
+              </div>
             )}
           </div>
           <Button asChild>

@@ -7,9 +7,18 @@ export async function GET() {
   if (!(await getAdminSessionUser())) return forbiddenResponse();
 
   const admin = createServiceRoleClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: partners, error } = await (admin as any)
-    .from("partners")
+  const partnerQuery = admin.from("partners") as unknown as {
+    select: (columns: string) => {
+      order: (
+        column: string,
+        options: { ascending: boolean },
+      ) => Promise<{
+        data: unknown[] | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+  const { data: partners, error } = await partnerQuery
     .select("*, referral_codes(*)")
     .order("created_at", { ascending: false });
 

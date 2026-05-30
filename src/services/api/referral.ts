@@ -89,7 +89,7 @@ export async function getMyReferral(): Promise<UserReferral | null> {
 
   if (error || !data) return null;
 
-  const row = data as {
+  const row = data as unknown as {
     code: string;
     partner_id: string;
     applied_at: string;

@@ -14,16 +14,30 @@ export default function WaitlistPage() {
       <main className="brand-blue-surface">
         <section className="container grid min-h-[calc(100vh-4rem)] items-center gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <Image src="/brand/prepwise-logo-blue.png" alt="Prepwise logo" width={58} height={58} className="rounded-2xl" />
+            <Image
+              src="/brand/prepwise-logo-round.png"
+              alt="Prepwise logo"
+              width={58}
+              height={58}
+              className="rounded-full"
+            />
             <h1 className="mt-6 max-w-2xl text-5xl font-bold leading-tight tracking-normal text-navy">
               Be first when Prepwise opens to students.
             </h1>
             <p className="mt-4 max-w-xl text-lg leading-8 text-slate-600">
-              Join the early access list for AI explanations, mock exams, analytics, and personalized learning plans.
+              Join the early access list for AI explanations, mock exams,
+              analytics, and personalized learning plans.
             </p>
             <div className="mt-6 space-y-3">
-              {["Free to join", "Mobile-first study experience", "Built for JAMB, WAEC, and NECO"].map((item) => (
-                <p key={item} className="flex items-center gap-3 text-sm font-medium text-slate-600">
+              {[
+                "Free to join",
+                "Mobile-first study experience",
+                "Built for JAMB, WAEC, and NECO",
+              ].map((item) => (
+                <p
+                  key={item}
+                  className="flex items-center gap-3 text-sm font-medium text-slate-600"
+                >
                   <CheckCircle2 className="h-5 w-5 text-success" />
                   {item}
                 </p>

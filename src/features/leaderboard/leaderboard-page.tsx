@@ -133,7 +133,7 @@ export function LeaderboardPage() {
           }));
 
         // Show top 20 + current user if below top 20
-        let displayBoard: LeaderboardEntry[] = allEntries.slice(0, 20);
+        const displayBoard: LeaderboardEntry[] = allEntries.slice(0, 20);
 
         const currentUserEntry = allEntries.find((e) => e.user_id === user.id);
         if (currentUserEntry && currentUserEntry.rank > 20) {
@@ -170,7 +170,9 @@ export function LeaderboardPage() {
           <Trophy className="h-3 w-3" />
           Weekly Quiz Leaderboard
         </Badge>
-        <h1 className="text-3xl font-bold text-navy">This Week's Rankings</h1>
+        <h1 className="text-3xl font-bold text-navy">
+          This Week&apos;s Rankings
+        </h1>
         <p className="text-slate-500">{weekLabel}</p>
       </div>
 
