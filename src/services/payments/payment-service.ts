@@ -57,6 +57,7 @@ export async function createPayment(input: CreatePaymentInput) {
     flutterwave_tx_ref: txRef,
     tx_ref: txRef,
     plan_key: plan.key,
+    plan_name: plan.name,
     amount: plan.amount,
     currency: plan.currency,
     status: "pending",

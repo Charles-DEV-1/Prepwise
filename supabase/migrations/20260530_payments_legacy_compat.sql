@@ -3,6 +3,7 @@
 
 alter table public.payments
   add column if not exists flutterwave_tx_ref text,
+  add column if not exists plan_name text,
   add column if not exists payment_link text,
   add column if not exists paid_at timestamptz;
 
@@ -10,6 +11,15 @@ update public.payments
 set
   tx_ref = coalesce(tx_ref, flutterwave_tx_ref),
   flutterwave_tx_ref = coalesce(flutterwave_tx_ref, tx_ref),
+  plan_name = coalesce(
+    plan_name,
+    metadata ->> 'plan_name',
+    case
+      when plan_key = 'prepwise_pro_annual' then 'Prepwise Pro'
+      else plan_key
+    end,
+    'Prepwise Pro'
+  ),
   status = coalesce(status, 'pending'),
   provider = coalesce(provider, 'flutterwave'),
   currency = coalesce(currency, 'NGN'),
@@ -22,6 +32,8 @@ set
 
 alter table public.payments
   alter column flutterwave_tx_ref drop not null,
+  alter column plan_name set default 'Prepwise Pro',
+  alter column plan_name set not null,
   alter column status set default 'pending',
   alter column status set not null,
   alter column provider set default 'flutterwave',
