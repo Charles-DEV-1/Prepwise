@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/services/supabase/client";
 import { cn } from "@/lib/utils";
+import type { ExamType } from "@/types/app";
 
 type Answer = {
   id: string;
@@ -37,6 +38,7 @@ type Answer = {
 type SessionSummary = {
   score: number | null;
   total_questions: number | null;
+  exam_type: ExamType | null;
 };
 
 type AnswerWithSubject = Answer & {
@@ -118,7 +120,7 @@ function ScoreCard({
               letterSpacing: "-0.5px",
             }}
           >
-            prepwise
+            prepcore
           </div>
           <div style={{ fontSize: "11px", color: "#93C5FD", marginTop: "2px" }}>
             Smart Prep. Higher Scores.
@@ -263,7 +265,7 @@ function ScoreCard({
       >
         <div style={{ fontSize: "11px", color: "#93C5FD" }}>{date}</div>
         <div style={{ fontSize: "11px", color: "#93C5FD" }}>
-          prepwise-two-mu.vercel.app
+          prepcore-two-mu.vercel.app
         </div>
       </div>
     </div>
@@ -283,6 +285,7 @@ export function ResultsPage({ id }: { id: string }) {
   const [showAll, setShowAll] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [userName, setUserName] = useState("Student");
+  const [examType, setExamType] = useState<ExamType>("jamb");
 
   const loadResults = useCallback(async () => {
     setLoading(true);
@@ -303,7 +306,7 @@ export function ResultsPage({ id }: { id: string }) {
     // Get session
     const { data: session } = await supabase
       .from("sessions")
-      .select("score, total_questions")
+      .select("score, total_questions, exam_type")
       .eq("id", id)
       .single();
 
@@ -311,6 +314,7 @@ export function ResultsPage({ id }: { id: string }) {
       const s = session as SessionSummary;
       setScore(s.score ?? 0);
       setTotalQuestions(s.total_questions ?? 0);
+      setExamType(s.exam_type ?? "jamb");
     }
 
     // Get answers with questions
@@ -371,7 +375,7 @@ export function ResultsPage({ id }: { id: string }) {
       });
 
       const link = document.createElement("a");
-      link.download = `prepwise-score-${score}percent.png`;
+      link.download = `prepcore-score-${score}percent.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
@@ -383,7 +387,7 @@ export function ResultsPage({ id }: { id: string }) {
 
   function shareWhatsApp() {
     const text = encodeURIComponent(
-      `I just scored ${score}% on a JAMB Mock Exam on Prepwise! 🎯\n\nSubjects:\n${subjectStats.map((s) => `${s.label}: ${s.percent}%`).join("\n")}\n\nPractice free at prepwise-two-mu.vercel.app`,
+      `I just scored ${score}% on a JAMB Mock Exam on Prepcore! 🎯\n\nSubjects:\n${subjectStats.map((s) => `${s.label}: ${s.percent}%`).join("\n")}\n\nPractice free at prepcore-two-mu.vercel.app`,
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   }
@@ -427,7 +431,7 @@ export function ResultsPage({ id }: { id: string }) {
       {/* Score hero */}
       <section className="soft-blue-gradient rounded-[2rem] border border-border p-6 shadow-soft md:p-8">
         <Badge className="border-blue-200 bg-white text-primary">
-          Exam complete
+          {examType.toUpperCase()} complete
         </Badge>
         <div className="mt-6 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
@@ -495,7 +499,7 @@ export function ResultsPage({ id }: { id: string }) {
               marginBottom: "16px",
             }}
           >
-            <div style={{ fontSize: "16px", fontWeight: "800" }}>prepwise</div>
+            <div style={{ fontSize: "16px", fontWeight: "800" }}>prepcore</div>
             <div
               style={{
                 fontSize: "10px",
@@ -594,7 +598,7 @@ export function ResultsPage({ id }: { id: string }) {
                 year: "numeric",
               })}
             </span>
-            <span>prepwise-two-mu.vercel.app</span>
+            <span>prepcore-two-mu.vercel.app</span>
           </div>
         </div>
         <div className="mt-3 flex gap-2">

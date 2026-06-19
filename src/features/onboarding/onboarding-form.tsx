@@ -27,6 +27,33 @@ import {
   referralErrorMessage,
   type UserReferral,
 } from "@/services/api/referral";
+import type { ExamGoal, ExamType } from "@/types/app";
+
+const examGoalOptions: Array<{
+  label: string;
+  description: string;
+  goals: ExamGoal;
+  primary: ExamType;
+}> = [
+  {
+    label: "JAMB only",
+    description: "Practice and mocks for JAMB subjects.",
+    goals: ["jamb"],
+    primary: "jamb",
+  },
+  {
+    label: "WAEC only",
+    description: "Practice and mocks for WAEC subjects.",
+    goals: ["waec"],
+    primary: "waec",
+  },
+  {
+    label: "Both",
+    description: "Prepare across JAMB and WAEC.",
+    goals: ["jamb", "waec"],
+    primary: "jamb",
+  },
+];
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -38,7 +65,8 @@ export function OnboardingForm() {
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      examType: "JAMB",
+      examType: "jamb",
+      examGoals: ["jamb"],
       subjects: ["English"],
       targetScore: 280,
       examDate: "2026-06-20",
@@ -77,7 +105,7 @@ export function OnboardingForm() {
   return (
     <Card className="mx-auto w-full max-w-2xl shadow-soft">
       <CardHeader>
-        <CardTitle>Personalize your Prepwise plan</CardTitle>
+        <CardTitle>Personalize your Prepcore plan</CardTitle>
         <CardDescription>
           Tell us what you are preparing for so the dashboard can recommend the
           right work.
@@ -88,21 +116,43 @@ export function OnboardingForm() {
           className="space-y-6"
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(["JAMB", "WAEC", "NECO"] as const).map((exam) => (
-              <label
-                key={exam}
-                className="rounded-xl border p-4 has-[:checked]:border-primary has-[:checked]:bg-primary/10"
-              >
-                <input
-                  type="radio"
-                  value={exam}
-                  className="sr-only"
-                  {...form.register("examType")}
-                />
-                <span className="font-semibold text-navy">{exam}</span>
-              </label>
-            ))}
+          <div>
+            <Label>Which exam are you preparing for?</Label>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {examGoalOptions.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  className={`rounded-xl border p-4 text-left transition ${
+                    JSON.stringify(form.watch("examGoals")) ===
+                    JSON.stringify(option.goals)
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-white hover:border-primary/50"
+                  }`}
+                  onClick={() => {
+                    form.setValue("examGoals", option.goals, {
+                      shouldValidate: true,
+                    });
+                    form.setValue("examType", option.primary, {
+                      shouldValidate: true,
+                    });
+                  }}
+                >
+                  <span className="font-semibold text-navy">
+                    {option.label}
+                  </span>
+                  <span className="mt-2 block text-xs leading-5 text-slate-500">
+                    {option.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {form.formState.errors.examGoals && (
+              <p className="mt-2 text-sm text-destructive">
+                {form.formState.errors.examGoals.message}
+              </p>
+            )}
+            <input type="hidden" {...form.register("examType")} />
           </div>
           <div>
             <Label>Subjects</Label>

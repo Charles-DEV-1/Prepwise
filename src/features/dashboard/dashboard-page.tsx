@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,6 +22,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useExamStore } from "@/store/examStore";
+import type { ExamGoal, ExamType } from "@/types/app";
 
 type DashboardData = {
   averageScore: number;
@@ -43,15 +47,25 @@ type DashboardData = {
   hasSessions: boolean;
   totalPoints: number;
   currentRank: string;
+  examGoals?: ExamGoal;
 } | null;
 
 export function DashboardPage({
   userName = "Student",
   data,
+  dataByExam,
 }: {
   userName?: string;
   data?: DashboardData;
+  dataByExam?: Record<ExamType, DashboardData>;
 }) {
+  const { activeExamType, setActiveExamType } = useExamStore();
+  const examGoals = data?.examGoals ?? ["jamb"];
+  const currentExamType = examGoals.includes(activeExamType)
+    ? activeExamType
+    : (examGoals[0] ?? "jamb");
+  const activeData = dataByExam?.[currentExamType] ?? data;
+  const examLabel = currentExamType.toUpperCase();
   const metrics = [
     {
       label: "Study streak",
@@ -61,14 +75,14 @@ export function DashboardPage({
     },
     {
       label: "Average score",
-      value: data?.hasSessions ? `${data.averageScore}%` : "—",
+      value: activeData?.hasSessions ? `${activeData.averageScore}%` : "—",
       icon: TrendingUp,
       tone: "text-success",
     },
     {
       label: "Questions answered",
-      value: data?.totalQuestionsAnswered
-        ? data.totalQuestionsAnswered.toLocaleString()
+      value: activeData?.totalQuestionsAnswered
+        ? activeData.totalQuestionsAnswered.toLocaleString()
         : "0",
       icon: BookOpenCheck,
       tone: "text-primary",
@@ -76,7 +90,9 @@ export function DashboardPage({
     {
       label: "Days until exam",
       value:
-        data?.daysUntilExam != null ? `${data.daysUntilExam} days` : "Not set",
+        activeData?.daysUntilExam != null
+          ? `${activeData.daysUntilExam} days`
+          : "Not set",
       icon: CalendarDays,
       tone: "text-primary",
     },
@@ -88,20 +104,34 @@ export function DashboardPage({
 
   return (
     <div className="space-y-6">
+      {examGoals.length > 1 && (
+        <div className="inline-flex rounded-xl border border-border bg-white p-1">
+          {(["jamb", "waec"] as const).map((examType) => (
+            <Button
+              key={examType}
+              size="sm"
+              variant={currentExamType === examType ? "default" : "ghost"}
+              onClick={() => setActiveExamType(examType)}
+            >
+              {examType.toUpperCase()}
+            </Button>
+          ))}
+        </div>
+      )}
       {/* Welcome banner */}
       <section className="soft-blue-gradient relative overflow-hidden rounded-[2rem] border border-border p-6 shadow-soft md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="relative flex items-center gap-3">
           <Image
-            src="/brand/prepwise-logo-round.png"
-            alt="Prepwise logo"
-            width={44}
-            height={44}
+            src="/favicons/android-chrome-512x512.png"
+            alt="Prepcore logo"
+            width={64}
+            height={64}
             className="rounded-full shadow-sm"
             priority
           />
           <Badge className="border-blue-200 bg-white text-primary">
-            {data?.examType ?? "JAMB"} preparation
+            {examLabel} preparation
           </Badge>
         </div>
         <div className="relative mt-5 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
@@ -109,20 +139,20 @@ export function DashboardPage({
             <h1 className="text-3xl font-bold tracking-normal text-navy md:text-4xl">
               {greeting}, {userName}.
             </h1>
-            {!data?.hasSessions ? (
+            {!activeData?.hasSessions ? (
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                Welcome to Prepwise! Start your first practice session to see
+                Welcome to Prepcore! Start your first practice session to see
                 your personalised stats here.
               </p>
-            ) : data.weakTopics.length > 0 ? (
+            ) : activeData.weakTopics.length > 0 ? (
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
                 Your average score is{" "}
                 <span className="font-semibold text-navy">
-                  {data.averageScore}%
+                  {activeData.averageScore}%
                 </span>
                 . Focus on{" "}
                 <span className="font-semibold text-navy">
-                  {data.weakTopics[0]?.subject}
+                  {activeData.weakTopics[0]?.subject}
                 </span>{" "}
                 — your weakest area right now.
               </p>
@@ -130,14 +160,18 @@ export function DashboardPage({
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
                 You are doing great! Average score:{" "}
                 <span className="font-semibold text-navy">
-                  {data.averageScore}%
+                  {activeData.averageScore}%
                 </span>
                 . Keep up the momentum.
               </p>
             )}
-            {data?.totalPoints !== undefined && (
+            {activeData?.totalPoints !== undefined && (
               <div className="mt-2">
-                <RankBadge points={data.totalPoints} showProgress size="md" />
+                <RankBadge
+                  points={activeData.totalPoints}
+                  showProgress
+                  size="md"
+                />
               </div>
             )}
           </div>
@@ -180,19 +214,21 @@ export function DashboardPage({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Sparkles className="h-5 w-5 text-primary" />
-              {data?.hasSessions ? "Recommended practice" : "Start practising"}
+              {activeData?.hasSessions
+                ? "Recommended practice"
+                : "Start practising"}
             </CardTitle>
             <CardDescription>
-              {data?.hasSessions
+              {activeData?.hasSessions
                 ? "Based on your weak topics and recent scores."
                 : "Complete a practice session to see personalised recommendations."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!data?.hasSessions || data.weakTopics.length === 0 ? (
+            {!activeData?.hasSessions || activeData.weakTopics.length === 0 ? (
               <div className="rounded-2xl border border-border bg-[#F8FAFC] p-6 text-center">
                 <p className="text-sm text-slate-500">
-                  {data?.hasSessions
+                  {activeData?.hasSessions
                     ? "Great job — no weak topics detected yet!"
                     : "Your weak topics will appear here after your first session."}
                 </p>
@@ -201,7 +237,7 @@ export function DashboardPage({
                 </Button>
               </div>
             ) : (
-              data.weakTopics.map((topic) => (
+              activeData.weakTopics.map((topic) => (
                 <div
                   key={topic.topic}
                   className="rounded-2xl border border-border bg-[#F8FAFC] p-4"
@@ -231,7 +267,8 @@ export function DashboardPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!data?.hasSessions || data.recentSessions.length === 0 ? (
+            {!activeData?.hasSessions ||
+            activeData.recentSessions.length === 0 ? (
               <div className="rounded-2xl bg-softblue p-5 text-center">
                 <p className="text-sm text-slate-600">
                   No sessions yet. Take your first practice or mock exam.
@@ -242,11 +279,11 @@ export function DashboardPage({
                 <div className="rounded-2xl bg-softblue p-5">
                   <div className="mb-3 flex justify-between text-sm font-medium text-slate-600">
                     <span>Average score</span>
-                    <span>{data.averageScore}%</span>
+                    <span>{activeData.averageScore}%</span>
                   </div>
-                  <Progress value={data.averageScore} />
+                  <Progress value={activeData.averageScore} />
                 </div>
-                {data.recentSessions.map((session) => (
+                {activeData.recentSessions.map((session) => (
                   <div
                     key={session.id}
                     className="flex items-center justify-between rounded-2xl border border-border p-3"

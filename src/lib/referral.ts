@@ -1,4 +1,4 @@
-export const REFERRAL_COOKIE_NAME = "prepwise_ref";
+export const REFERRAL_COOKIE_NAME = "prepcore_ref";
 export const REFERRAL_COOKIE_MAX_AGE_DAYS = 30;
 
 export function normalizeReferralCode(code: string): string {

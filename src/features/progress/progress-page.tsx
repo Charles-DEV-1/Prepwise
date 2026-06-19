@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/services/supabase/client";
 import { getProgressData } from "@/services/api/progress";
 import { getCurrentStreak } from "@/services/api/streak";
+import { useExamStore } from "@/store/examStore";
 
 type Session = {
   id: string;
@@ -26,6 +27,7 @@ type Session = {
 };
 
 export function ProgressPage() {
+  const { activeExamType, setActiveExamType } = useExamStore();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [streak, setStreak] = useState(0);
 
@@ -39,7 +41,7 @@ export function ProgressPage() {
 
       if (!user) return;
 
-      const progressData = await getProgressData(user.id);
+      const progressData = await getProgressData(user.id, activeExamType);
 
       setSessions(progressData);
 
@@ -47,7 +49,7 @@ export function ProgressPage() {
     }
 
     loadData();
-  }, []);
+  }, [activeExamType]);
 
   const chartData = useMemo(() => {
     return sessions.map((session, index) => ({
@@ -104,6 +106,21 @@ export function ProgressPage() {
   return (
     <div className="space-y-6">
       <div>
+        <div className="mb-4 inline-flex rounded-xl border border-border bg-white p-1">
+          {(["jamb", "waec"] as const).map((examType) => (
+            <button
+              key={examType}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                activeExamType === examType
+                  ? "bg-primary text-white"
+                  : "text-slate-600"
+              }`}
+              onClick={() => setActiveExamType(examType)}
+            >
+              {examType.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <h1 className="text-3xl font-bold text-navy">Progress analytics</h1>
 
         <p className="mt-2 text-sm text-slate-600">

@@ -1,6 +1,6 @@
 import { siteConfig } from "@/config/site";
 
-export type PaymentPlanKey = "prepwise_pro_annual";
+export type PaymentPlanKey = "prepcore_pro_annual";
 
 export type PaymentPlan = {
   key: PaymentPlanKey;
@@ -12,17 +12,17 @@ export type PaymentPlan = {
 };
 
 export const PAYMENT_PLANS: Record<PaymentPlanKey, PaymentPlan> = {
-  prepwise_pro_annual: {
-    key: "prepwise_pro_annual",
-    name: "Prepwise Pro",
-    description: "Full Prepwise Pro access for one year.",
+  prepcore_pro_annual: {
+    key: "prepcore_pro_annual",
+    name: "Prepcore Pro",
+    description: "Full Prepcore Pro access for one year.",
     amount: 2000,
     currency: "NGN",
     durationDays: 365,
   },
 };
 
-export const DEFAULT_PAYMENT_PLAN_KEY: PaymentPlanKey = "prepwise_pro_annual";
+export const DEFAULT_PAYMENT_PLAN_KEY: PaymentPlanKey = "prepcore_pro_annual";
 
 export function getPaymentPlan(planKey = DEFAULT_PAYMENT_PLAN_KEY) {
   const plan = PAYMENT_PLANS[planKey as PaymentPlanKey];

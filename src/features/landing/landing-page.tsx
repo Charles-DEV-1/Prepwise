@@ -79,7 +79,7 @@ export function LandingPage() {
               The modern learning platform to ace JAMB, WAEC, and NECO.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Prepwise helps students practise smarter, understand mistakes
+              Prepcore helps students practise smarter, understand mistakes
               faster, and walk into exam day with real confidence.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -108,14 +108,14 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative z-10">
-            <div className="absolute -right-4 top-8 hidden w-40 overflow-hidden rounded-3xl border border-white bg-white shadow-soft lg:block">
+          <div className="relative z-10 space-y-5">
+            <div className="overflow-hidden rounded-[1.75rem] border border-white/70 bg-navy shadow-soft">
               <Image
-                src="/brand/prepwise-flyer.png"
-                alt="Nigerian student studying with Prepwise"
-                width={320}
-                height={420}
-                className="h-52 w-full object-cover object-[72%_12%]"
+                src="/Prepcore_app_logo_design_202606131935.jpeg"
+                alt="Prepcore app branding showcase"
+                width={1376}
+                height={768}
+                className="aspect-[16/7] w-full object-cover"
                 priority
               />
             </div>
@@ -125,15 +125,15 @@ export function LandingPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Image
-                      src="/brand/prepwise-logo-round.png"
-                      alt="Prepwise logo"
-                      width={38}
-                      height={38}
+                      src="/favicons/android-chrome-512x512.png"
+                      alt="Prepcore logo"
+                      width={52}
+                      height={52}
                       className="rounded-full"
                     />
                     <div>
                       <p className="text-sm font-bold text-navy">
-                        Prepwise Dashboard
+                        Prepcore Dashboard
                       </p>
                       <p className="text-xs text-slate-500">
                         Today&apos;s study plan
@@ -273,7 +273,7 @@ export function LandingPage() {
               Built to make progress feel possible.
             </h2>
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Prepwise motivates students with streaks, milestones, score
+              Prepcore motivates students with streaks, milestones, score
               movement, and clear next steps.
             </p>
           </div>
@@ -333,16 +333,25 @@ export function LandingPage() {
 
       <section className="bg-white py-16">
         <div className="container">
-          <div className="soft-blue-gradient grid items-center gap-8 rounded-[2rem] border border-border p-6 shadow-soft md:grid-cols-[1fr_auto] md:p-10">
+          <div className="soft-blue-gradient grid items-center gap-8 rounded-[2rem] border border-border p-6 shadow-soft md:grid-cols-[1fr_18rem_auto] md:p-10">
             <div>
               <CheckCircle2 className="h-8 w-8 text-success" />
               <h2 className="mt-5 max-w-3xl text-4xl font-bold tracking-normal text-navy">
-                Join the students getting early access to Prepwise.
+                Join the students getting early access to Prepcore.
               </h2>
               <p className="mt-3 text-slate-600">
                 Past questions, mock exams, AI explanations, and score tracking
                 in one modern workspace.
               </p>
+            </div>
+            <div className="hidden overflow-hidden rounded-2xl border border-white bg-white shadow-sm md:block md:w-72">
+              <Image
+                src="/Prepcore_app_logo_design_202606131935 (1).jpeg"
+                alt="Prepcore alternate brand design"
+                width={1376}
+                height={768}
+                className="aspect-[16/9] w-full object-cover"
+              />
             </div>
             <Button asChild size="lg">
               <Link href="/waitlist">Join Waitlist</Link>

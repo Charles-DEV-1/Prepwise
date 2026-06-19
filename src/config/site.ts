@@ -4,7 +4,7 @@ function getAppUrl() {
 }
 
 export const siteConfig = {
-  name: "Prepwise",
+  name: "Prepcore",
   formerName: "PassNow",
   url: getAppUrl(),
   description:

@@ -3,16 +3,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
   const settings = [
-    { title: "Study reminders", body: "Daily nudges for streaks and mock exam targets.", icon: Bell },
-    { title: "Appearance", body: "Light-first interface with accessible contrast.", icon: Moon },
-    { title: "Security", body: "Session and account protection settings.", icon: ShieldCheck },
+    {
+      title: "Study reminders",
+      body: "Daily nudges for streaks and mock exam targets.",
+      icon: Bell,
+    },
+    {
+      title: "Appearance",
+      body: "Light-first interface with accessible contrast.",
+      icon: Moon,
+    },
+    {
+      title: "Security",
+      body: "Session and account protection settings.",
+      icon: ShieldCheck,
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-normal text-navy">Settings</h1>
-        <p className="mt-2 text-sm text-slate-600">Manage your Prepwise study experience.</p>
+        <h1 className="text-3xl font-bold tracking-normal text-navy">
+          Settings
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Manage your Prepcore study experience.
+        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {settings.map((item) => (
@@ -22,7 +38,9 @@ export default function SettingsPage() {
                 <item.icon className="h-6 w-6" />
               </div>
               <h2 className="mt-4 font-bold text-navy">{item.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{item.body}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.body}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -32,9 +50,21 @@ export default function SettingsPage() {
           <CardTitle>Notification preferences</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
-          {["Daily study reminder", "Mock exam summary", "Weak-topic alerts", "Leaderboard movement"].map((item) => (
-            <label key={item} className="flex items-center gap-3 rounded-2xl border border-border p-4 text-sm font-medium text-slate-600">
-              <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#2563EB]" />
+          {[
+            "Daily study reminder",
+            "Mock exam summary",
+            "Weak-topic alerts",
+            "Leaderboard movement",
+          ].map((item) => (
+            <label
+              key={item}
+              className="flex items-center gap-3 rounded-2xl border border-border p-4 text-sm font-medium text-slate-600"
+            >
+              <input
+                type="checkbox"
+                defaultChecked
+                className="h-4 w-4 accent-[#2563EB]"
+              />
               {item}
             </label>
           ))}

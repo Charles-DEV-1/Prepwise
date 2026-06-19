@@ -7,20 +7,20 @@ export function Footer() {
       <div className="container flex flex-col gap-4 py-8 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Image
-            src="/brand/prepwise-logo-round.png"
-            alt="Prepwise logo"
-            width={34}
-            height={34}
+            src="/favicons/android-chrome-512x512.png"
+            alt="Prepcore logo"
+            width={48}
+            height={48}
             className="rounded-full"
           />
           <p>
-            © {new Date().getFullYear()} Prepwise. Built for Nigerian students.
+            © {new Date().getFullYear()} Prepcore. Built for Nigerian students.
           </p>
         </div>
         <div className="flex gap-5">
           <Link href="/login">Login</Link>
           <Link href="/pricing">Pricing</Link>
-          <a href="mailto:hello@prepwise.ng">Contact</a>
+          <a href="mailto:hello@prepcore.ng">Contact</a>
         </div>
       </div>
     </footer>

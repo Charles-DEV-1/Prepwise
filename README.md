@@ -1,6 +1,6 @@
-# Prepwise
+# Prepcore
 
-Prepwise is a mobile-first SaaS-style EdTech frontend foundation for Nigerian exam preparation across JAMB, WAEC, and NECO.
+Prepcore is a mobile-first SaaS-style EdTech frontend foundation for Nigerian exam preparation across JAMB, WAEC, and NECO.
 
 ## Stack
 

@@ -15,10 +15,10 @@ set
     plan_name,
     metadata ->> 'plan_name',
     case
-      when plan_key = 'prepwise_pro_annual' then 'Prepwise Pro'
+      when plan_key = 'prepcore_pro_annual' then 'Prepcore Pro'
       else plan_key
     end,
-    'Prepwise Pro'
+    'Prepcore Pro'
   ),
   status = coalesce(status, 'pending'),
   provider = coalesce(provider, 'flutterwave'),
@@ -32,7 +32,7 @@ set
 
 alter table public.payments
   alter column flutterwave_tx_ref drop not null,
-  alter column plan_name set default 'Prepwise Pro',
+  alter column plan_name set default 'Prepcore Pro',
   alter column plan_name set not null,
   alter column status set default 'pending',
   alter column status set not null,

@@ -10,7 +10,10 @@ export const otpSchema = z.object({
 });
 
 export const onboardingSchema = z.object({
-  examType: z.enum(["JAMB", "WAEC", "NECO"]),
+  examType: z.enum(["jamb", "waec"]),
+  examGoals: z
+    .array(z.enum(["jamb", "waec"]))
+    .min(1, "Choose at least one exam"),
   subjects: z.array(z.string()).min(1, "Select at least one subject"),
   targetScore: z.coerce.number().min(1).max(400),
   examDate: z.string().min(1, "Choose your exam date"),

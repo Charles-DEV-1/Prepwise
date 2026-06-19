@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Question } from "@/types/app";
+export { useExamStore } from "@/store/examStore";
 
 type AppState = {
   activeQuestionIndex: number;
@@ -26,5 +27,10 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       selectedAnswers: { ...state.selectedAnswers, [question.id]: answer },
     })),
-  resetExam: () => set({ activeQuestionIndex: 0, flaggedQuestionIds: [], selectedAnswers: {} }),
+  resetExam: () =>
+    set({
+      activeQuestionIndex: 0,
+      flaggedQuestionIds: [],
+      selectedAnswers: {},
+    }),
 }));

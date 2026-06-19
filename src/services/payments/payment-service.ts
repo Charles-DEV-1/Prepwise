@@ -87,7 +87,7 @@ export async function createPayment(input: CreatePaymentInput) {
     customizations: {
       title: siteConfig.name,
       description: plan.description,
-      logo: `${siteConfig.url}/brand/prepwise-logo-blue.png`,
+      logo: `${siteConfig.url}/favicons/android-chrome-192x192.png`,
     },
     meta: {
       user_id: input.userId,

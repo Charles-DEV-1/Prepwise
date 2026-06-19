@@ -98,7 +98,7 @@ export function formatPlanSource(
   source: PlanSource,
   partnerName?: string,
 ): string {
-  if (source === "individual") return "Prepwise Pro (direct payment)";
+  if (source === "individual") return "Prepcore Pro (direct payment)";
   if (source === "partner_bulk" && partnerName) {
     return `Pro via ${partnerName} (lesson center plan)`;
   }

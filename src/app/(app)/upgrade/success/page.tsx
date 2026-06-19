@@ -71,7 +71,7 @@ export default function PaymentSuccessPage() {
                 Verifying your payment
               </h1>
               <p className="mt-2 text-sm text-slate-500">
-                Please wait while Prepwise confirms your Flutterwave
+                Please wait while Prepcore confirms your Flutterwave
                 transaction.
               </p>
             </>
@@ -84,7 +84,7 @@ export default function PaymentSuccessPage() {
                 Pro is active
               </h1>
               <p className="mt-2 text-sm text-slate-500">
-                Your payment was verified and your Prepwise Pro access has been
+                Your payment was verified and your Prepcore Pro access has been
                 enabled.
               </p>
               <Button asChild className="mt-6">

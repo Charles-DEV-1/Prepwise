@@ -8,17 +8,17 @@ export function PublicNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-white/88 backdrop-blur-xl">
       <nav className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/brand/prepwise-logo-round.png"
-            alt="Prepwise logo"
-            width={38}
-            height={38}
+            src="/favicons/android-chrome-512x512.png"
+            alt="Prepcore logo"
+            width={52}
+            height={52}
             className="rounded-full"
             priority
           />
           <span className="text-xl font-extrabold tracking-normal text-navy">
-            prepwise
+            prepcore
           </span>
         </Link>
         <div className="hidden items-center gap-7 md:flex">

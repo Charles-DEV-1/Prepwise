@@ -27,9 +27,12 @@ import { useUserPlan } from "@/hooks/use-user-plan";
 import { incrementMockExamUsage } from "@/services/api/usage";
 import { canTakeMockExam } from "@/services/api/usage";
 import {
+  getSubjectsByExamType,
   getRandomQuestionsBySubject,
   type QuestionForSession,
+  type SubjectForExam,
 } from "@/services/api/questions";
+import type { ExamType } from "@/types/app";
 
 const EXAM_SUBJECTS = [
   { label: "English", id: "11111111-1111-1111-1111-111111111111" },
@@ -38,8 +41,10 @@ const EXAM_SUBJECTS = [
   { label: "Biology", id: "55555555-5555-5555-5555-555555555555" },
 ];
 
-const EXAM_DURATION = 100 * 60; // 100 minutes in seconds
-const QUESTIONS_PER_SUBJECT = 10; // 40 total
+const JAMB_DURATION = 7200;
+const WAEC_DURATION = 3600;
+const JAMB_QUESTIONS_PER_SUBJECT = 45;
+const WAEC_TOTAL_QUESTIONS = 50;
 
 type Question = QuestionForSession & {
   subject_label: string;
@@ -49,15 +54,22 @@ type ExamPhase = "setup" | "exam" | "submitting";
 
 export function ExamPage() {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const [supabase] = useState(() => createClient());
   const { isPro } = useUserPlan();
   const [limitReached, setLimitReached] = useState(false);
   const [remaining, setRemaining] = useState(3);
   const [phase, setPhase] = useState<ExamPhase>("setup");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
-  const [seconds, setSeconds] = useState(EXAM_DURATION);
+  const [seconds, setSeconds] = useState(JAMB_DURATION);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [selectedExamType, setSelectedExamType] = useState<ExamType>("jamb");
+  const [jambSubjects, setJambSubjects] = useState<SubjectForExam[]>([]);
+  const [waecSubjects, setWaecSubjects] = useState<SubjectForExam[]>([]);
+  const [selectedJambSubjectIds, setSelectedJambSubjectIds] = useState<
+    string[]
+  >([]);
+  const [selectedWaecSubjectId, setSelectedWaecSubjectId] = useState("");
 
   const {
     activeQuestionIndex,
@@ -70,6 +82,13 @@ export function ExamPage() {
   } = useAppStore();
 
   const question = questions[activeQuestionIndex];
+  const selectedWaecSubject = waecSubjects.find(
+    (subject) => subject.id === selectedWaecSubjectId,
+  );
+  const examTitle =
+    selectedExamType === "waec"
+      ? `WAEC Mock${selectedWaecSubject ? ` - ${selectedWaecSubject.name}` : ""}`
+      : "JAMB Mock Exam";
 
   const handleSubmit = useCallback(async () => {
     setPhase("submitting");
@@ -100,6 +119,7 @@ export function ExamPage() {
         mode: "mock",
         score: scorePercent,
         total_questions: questions.length,
+        exam_type: selectedExamType,
         completed_at: new Date().toISOString(),
       } as never)
       .select("id")
@@ -120,13 +140,38 @@ export function ExamPage() {
       question_id: q.id,
       selected_answer: selectedAnswers[q.id] ?? null,
       is_correct: selectedAnswers[q.id] === q.correct_answer,
+      exam_type: selectedExamType,
     }));
     await awardPoints(supabase, user.id, "mock", scorePercent);
     await supabase.from("answers").insert(answerRows as never);
     await updateStreak(supabase, user.id);
 
     router.push(`/results/${sessionId}`);
-  }, [questions, selectedAnswers, supabase, router]);
+  }, [questions, selectedAnswers, selectedExamType, supabase, router]);
+
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSubjects() {
+      setSubjectsLoading(true);
+      const [nextJambSubjects, nextWaecSubjects] = await Promise.all([
+        getSubjectsByExamType(supabase, "jamb"),
+        getSubjectsByExamType(supabase, "waec"),
+      ]);
+      console.log("JAMB subjects:", nextJambSubjects);
+      console.log("WAEC subjects:", nextWaecSubjects);
+      setJambSubjects(nextJambSubjects);
+      setWaecSubjects(nextWaecSubjects);
+      setSelectedWaecSubjectId(nextWaecSubjects[0]?.id ?? "");
+      setSubjectsLoading(false);
+      const firstThree = nextJambSubjects
+        .filter((s) => s?.name && !s.name.toLowerCase().includes("english"))
+        .slice(0, 3)
+        .map((s) => s.id);
+      setSelectedJambSubjectIds(firstThree);
+    }
+    void loadSubjects();
+  }, [supabase]);
 
   // Timer
   useEffect(() => {
@@ -167,12 +212,32 @@ export function ExamPage() {
       setRemaining(remaining - 1);
     }
 
+    const selectedSubjects =
+      selectedExamType === "waec"
+        ? waecSubjects
+            .filter((subject) => subject.id === selectedWaecSubjectId)
+            .map((subject) => ({ id: subject.id, label: subject.name }))
+        : [
+            EXAM_SUBJECTS[0],
+            ...(jambSubjects.length > 0
+              ? jambSubjects
+                  .filter((subject) =>
+                    selectedJambSubjectIds.includes(subject.id),
+                  )
+                  .slice(0, 3)
+                  .map((subject) => ({ id: subject.id, label: subject.name }))
+              : EXAM_SUBJECTS.slice(1)),
+          ];
+
     const questionGroups = await Promise.all(
-      EXAM_SUBJECTS.map(async (subject) => {
+      selectedSubjects.map(async (subject) => {
         const picked = await getRandomQuestionsBySubject(
           supabase,
           subject.id,
-          QUESTIONS_PER_SUBJECT,
+          selectedExamType === "waec"
+            ? WAEC_TOTAL_QUESTIONS
+            : JAMB_QUESTIONS_PER_SUBJECT,
+          selectedExamType,
         );
         return picked.map((question) => ({
           ...question,
@@ -184,7 +249,7 @@ export function ExamPage() {
     // Shuffle all questions together
     const shuffled = questionGroups.flat().sort(() => Math.random() - 0.5);
     setQuestions(shuffled);
-    setSeconds(EXAM_DURATION);
+    setSeconds(selectedExamType === "waec" ? WAEC_DURATION : JAMB_DURATION);
     setPhase("exam");
     setLoading(false);
   }
@@ -198,29 +263,120 @@ export function ExamPage() {
       <div className="mx-auto max-w-xl space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">JAMB Mock Exam</CardTitle>
+            <CardTitle className="text-2xl">Choose mock exam</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(["jamb", "waec"] as const).map((examType) => (
+                <button
+                  key={examType}
+                  type="button"
+                  className={cn(
+                    "rounded-2xl border p-5 text-left transition hover:border-primary",
+                    selectedExamType === examType &&
+                      "border-primary bg-softblue",
+                  )}
+                  onClick={() => setSelectedExamType(examType)}
+                >
+                  <p className="font-bold text-navy">
+                    {examType === "jamb" ? "JAMB Mock" : "WAEC Mock"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {examType === "jamb"
+                      ? "English Language plus three subjects."
+                      : "One WAEC subject with a one-hour timer."}
+                  </p>
+                </button>
+              ))}
+            </div>
             <div className="rounded-2xl border border-border bg-[#F8FAFC] p-5 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Questions</span>
-                <span className="font-semibold text-navy">40 questions</span>
+                <span className="font-semibold text-navy">
+                  {selectedExamType === "jamb"
+                    ? "180 questions"
+                    : "50 questions"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Duration</span>
-                <span className="font-semibold text-navy">100 minutes</span>
+                <span className="font-semibold text-navy">
+                  {selectedExamType === "jamb" ? "2 hours" : "1 hour"}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Subjects</span>
                 <span className="font-semibold text-navy">
-                  English, Maths, Physics, Biology
+                  {selectedExamType === "jamb"
+                    ? "English locked + 3 subjects"
+                    : (selectedWaecSubject?.name ?? "Choose one subject")}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Per subject</span>
-                <span className="font-semibold text-navy">10 questions</span>
-              </div>
             </div>
+
+            {selectedExamType === "jamb" ? (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-navy">
+                  English Language is locked. Pick 3 more subjects.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {subjectsLoading ? (
+                    <p className="text-sm text-slate-400 col-span-2">
+                      Loading subjects...
+                    </p>
+                  ) : (
+                    jambSubjects
+                      .filter(
+                        (subject) =>
+                          subject?.name &&
+                          !subject.name.toLowerCase().includes("english"),
+                      )
+                      .map((subject) => {
+                        const checked = selectedJambSubjectIds.includes(
+                          subject.id,
+                        );
+                        return (
+                          <Button
+                            key={subject.id}
+                            type="button"
+                            variant={checked ? "default" : "outline"}
+                            onClick={() =>
+                              setSelectedJambSubjectIds((current) =>
+                                checked
+                                  ? current.filter((id) => id !== subject.id)
+                                  : current.length < 3
+                                    ? [...current, subject.id]
+                                    : current,
+                              )
+                            }
+                          >
+                            {subject.name}
+                          </Button>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-navy">
+                  Choose WAEC subject
+                </p>
+                <select
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
+                  value={selectedWaecSubjectId}
+                  onChange={(event) =>
+                    setSelectedWaecSubjectId(event.target.value)
+                  }
+                >
+                  {waecSubjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4 flex gap-3">
               <AlertTriangle className="h-5 w-5 text-amber flex-shrink-0 mt-0.5" />
@@ -289,7 +445,7 @@ export function ExamPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
-            <CardTitle>JAMB Mock Exam</CardTitle>
+            <CardTitle>{examTitle}</CardTitle>
             <p className="text-sm text-slate-500 mt-1">
               Question {activeQuestionIndex + 1} of {questions.length}
               {question && (

@@ -15,7 +15,8 @@ export type Database = {
           full_name: string | null;
           phone: string | null;
           email: string | null;
-          exam_type: "JAMB" | "WAEC" | "NECO" | null;
+          exam_type: "jamb" | "waec" | null;
+          exam_goals: ("jamb" | "waec")[] | null;
           selected_subjects: string[] | null;
           target_score: number | null;
           exam_date: string | null;
@@ -36,13 +37,13 @@ export type Database = {
         Row: {
           id: string;
           name: string;
-          exam_type: string;
+          exam_type: "jamb" | "waec";
           created_at: string;
         };
         Insert: {
           id?: string;
           name: string;
-          exam_type: string;
+          exam_type: "jamb" | "waec";
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["subjects"]["Row"]>;
@@ -77,6 +78,7 @@ export type Database = {
           mode: "practice" | "mock";
           score: number | null;
           total_questions: number;
+          exam_type: "jamb" | "waec";
           completed_at: string | null;
           created_at: string;
         };
@@ -94,6 +96,7 @@ export type Database = {
           question_id: string;
           selected_answer: string | null;
           is_correct: boolean;
+          exam_type: "jamb" | "waec";
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["answers"]["Row"]> & {
@@ -418,9 +421,22 @@ export type Database = {
           subject_id: string;
         }>;
       };
+      get_available_years: {
+        Args: { p_subject_id: string; p_exam_type: string };
+        Returns: Array<{ year: number } | number>;
+      };
+      get_subjects_by_exam_type: {
+        Args: { p_exam_type: string };
+        Returns: Array<{
+          id: string;
+          name: string;
+          exam_type: "jamb" | "waec";
+          question_count: number;
+        }>;
+      };
     };
     Enums: {
-      exam_type: "JAMB" | "WAEC" | "NECO";
+      exam_type: "jamb" | "waec";
       session_mode: "practice" | "mock";
       subscription_plan: "free" | "pro";
       subscription_status: "active" | "past_due" | "cancelled";

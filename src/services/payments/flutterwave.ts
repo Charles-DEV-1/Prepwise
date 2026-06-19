@@ -93,7 +93,7 @@ async function flutterwaveFetch<T>(
 }
 
 export function createTxRef(userId: string) {
-  return `prepwise_${userId.slice(0, 8)}_${Date.now()}_${crypto
+  return `prepcore_${userId.slice(0, 8)}_${Date.now()}_${crypto
     .randomBytes(8)
     .toString("hex")}`;
 }

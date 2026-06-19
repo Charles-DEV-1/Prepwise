@@ -14,13 +14,13 @@ export default function AuthLayout({
       <section className="hidden soft-blue-gradient border-l border-border p-10 text-navy lg:flex lg:flex-col lg:justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/brand/prepwise-logo-round.png"
-            alt="Prepwise logo"
-            width={46}
-            height={46}
+            src="/favicons/android-chrome-512x512.png"
+            alt="Prepcore logo"
+            width={72}
+            height={72}
             className="rounded-full"
           />
-          <span className="text-2xl font-bold">prepwise</span>
+          <span className="text-2xl font-bold">prepcore</span>
         </Link>
         <div>
           <p className="text-5xl font-bold leading-tight">

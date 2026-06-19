@@ -49,7 +49,7 @@ export default function UpgradePage() {
       const response = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_key: "prepwise_pro_annual" }),
+        body: JSON.stringify({ plan_key: "prepcore_pro_annual" }),
       });
       const data = (await response.json()) as {
         checkout_url?: string;
@@ -86,7 +86,7 @@ export default function UpgradePage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
             <Crown className="h-8 w-8 text-yellow-300" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold">You are on Prepwise Pro</h1>
+          <h1 className="mt-4 text-2xl font-bold">You are on Prepcore Pro</h1>
           <p className="mt-2 text-sm text-blue-100">
             {isPartnerBulkPro && partnerName
               ? `Pro included through ${partnerName}.`
@@ -140,7 +140,7 @@ export default function UpgradePage() {
           Secure Flutterwave checkout
         </Badge>
         <h1 className="text-3xl font-bold text-navy">
-          Upgrade to Prepwise Pro
+          Upgrade to Prepcore Pro
         </h1>
         <p className="mx-auto max-w-lg text-slate-500">
           Pay online and get automatic Pro access after server-side transaction
@@ -219,7 +219,7 @@ export default function UpgradePage() {
                     Verified before activation
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Prepwise verifies the transaction with Flutterwave before
+                    Prepcore verifies the transaction with Flutterwave before
                     upgrading your account.
                   </p>
                 </div>

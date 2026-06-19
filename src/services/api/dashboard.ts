@@ -1,11 +1,13 @@
 import { getCurrentStreak } from "@/services/api/streak";
 import type { createClient } from "@/services/supabase/client";
+import type { ExamType } from "@/types/app";
 
 type AppSupabaseClient = ReturnType<typeof createClient>;
 
 export async function getDashboardData(
   supabase: AppSupabaseClient,
   userId: string,
+  examType: ExamType = "jamb",
 ) {
   // Run all queries in parallel for speed
   const [sessionsResult, profileResult, pointsResult, currentStreak] =
@@ -13,14 +15,15 @@ export async function getDashboardData(
       // All completed sessions
       supabase
         .from("sessions")
-        .select("id, score, total_questions, mode, created_at")
+        .select("id, score, total_questions, mode, created_at, exam_type")
         .eq("user_id", userId)
+        .eq("exam_type", examType)
         .order("created_at", { ascending: false }),
 
       // User profile (exam date, target score)
       supabase
         .from("users")
-        .select("exam_date, target_score, exam_type")
+        .select("exam_date, target_score, exam_type, exam_goals")
         .eq("id", userId)
         .single(),
 
@@ -130,7 +133,8 @@ export async function getDashboardData(
     totalQuestionsAnswered,
     streak: currentStreak,
     daysUntilExam,
-    examType: profile?.exam_type ?? "JAMB",
+    examType,
+    examGoals: profile?.exam_goals ?? [profile?.exam_type ?? "jamb"],
     targetScore: profile?.target_score ?? 200,
     recentSessions,
     weakTopics,

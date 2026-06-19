@@ -82,14 +82,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mb-6 flex items-center justify-between">
               <Link href="/dashboard" className="flex items-center gap-3 px-2">
                 <Image
-                  src="/brand/prepwise-logo-round.png"
-                  alt="Prepwise logo"
-                  width={42}
-                  height={42}
+                  src="/favicons/android-chrome-512x512.png"
+                  alt="Prepcore logo"
+                  width={60}
+                  height={60}
                   className="rounded-full"
                 />
                 <div>
-                  <p className="text-lg font-extrabold text-navy">prepwise</p>
+                  <p className="text-lg font-extrabold text-navy">prepcore</p>
                   <p className="text-xs font-medium text-slate-500">
                     Smart prep. Higher scores.
                   </p>
@@ -122,16 +122,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <Link href="/dashboard" className="flex items-center gap-2">
+              <Link href="/dashboard" className="flex items-center gap-3">
                 <Image
-                  src="/brand/prepwise-logo-round.png"
-                  alt="Prepwise logo"
-                  width={32}
-                  height={32}
+                  src="/favicons/android-chrome-512x512.png"
+                  alt="Prepcore logo"
+                  width={48}
+                  height={48}
                   className="rounded-full"
                   priority
                 />
-                <span className="font-semibold text-navy">prepwise</span>
+                <span className="font-semibold text-navy">prepcore</span>
               </Link>
             </div>
 
@@ -188,14 +188,14 @@ function SidebarContent({
       {!compact && (
         <Link href="/dashboard" className="flex items-center gap-3 px-2">
           <Image
-            src="/brand/prepwise-logo-round.png"
-            alt="Prepwise logo"
-            width={42}
-            height={42}
+            src="/favicons/android-chrome-512x512.png"
+            alt="Prepcore logo"
+            width={60}
+            height={60}
             className="rounded-full"
           />
           <div>
-            <p className="text-lg font-extrabold text-navy">prepwise</p>
+            <p className="text-lg font-extrabold text-navy">prepcore</p>
             <p className="text-xs font-medium text-slate-500">
               Smart prep. Higher scores.
             </p>

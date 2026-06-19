@@ -147,7 +147,7 @@ export default function ProfilePage() {
                     <Crown className="h-5 w-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-navy">Prepwise Pro</p>
+                    <p className="font-semibold text-navy">Prepcore Pro</p>
                     <p className="text-xs text-slate-500">
                       {isPartnerBulkPro && planPartnerName
                         ? `Included via ${planPartnerName} lesson center plan`

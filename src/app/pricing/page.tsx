@@ -12,7 +12,7 @@ const plans = [
     items: ["Past questions", "Basic mock exams", "Starter progress tracking"],
   },
   {
-    name: "Prepwise Pro",
+    name: "Prepcore Pro",
     price: "Coming soon",
     items: [
       "AI explanations",

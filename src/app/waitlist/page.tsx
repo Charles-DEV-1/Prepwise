@@ -15,14 +15,14 @@ export default function WaitlistPage() {
         <section className="container grid min-h-[calc(100vh-4rem)] items-center gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             <Image
-              src="/brand/prepwise-logo-round.png"
-              alt="Prepwise logo"
-              width={58}
-              height={58}
+              src="/favicons/android-chrome-512x512.png"
+              alt="Prepcore logo"
+              width={88}
+              height={88}
               className="rounded-full"
             />
             <h1 className="mt-6 max-w-2xl text-5xl font-bold leading-tight tracking-normal text-navy">
-              Be first when Prepwise opens to students.
+              Be first when Prepcore opens to students.
             </h1>
             <p className="mt-4 max-w-xl text-lg leading-8 text-slate-600">
               Join the early access list for AI explanations, mock exams,

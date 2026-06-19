@@ -93,7 +93,7 @@ function PartnerBulkProPanel({
       </p>
       <p className="text-xs text-slate-600">
         When ON, every student who signed up with this center&apos;s link gets
-        Pro automatically. When OFF, they stay on Free unless they pay Prepwise
+        Pro automatically. When OFF, they stay on Free unless they pay Prepcore
         directly.
       </p>
       <label className="flex items-center gap-2 text-sm font-medium">

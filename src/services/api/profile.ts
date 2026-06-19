@@ -6,6 +6,7 @@ import { createClient } from "@/services/supabase/client";
 export type ProfileData = {
   full_name: string | null;
   exam_type: string | null;
+  exam_goals?: ("jamb" | "waec")[] | null;
   target_score: number | null;
   email: string | null;
 };
@@ -25,6 +26,7 @@ export async function completeOnboarding(values: OnboardingValues) {
     phone: user.phone,
     email: user.email,
     exam_type: values.examType,
+    exam_goals: values.examGoals,
     selected_subjects: values.subjects,
     target_score: values.targetScore,
     exam_date: values.examDate,
@@ -48,7 +50,7 @@ export async function getProfileData(): Promise<ProfileData> {
 
   const { data: profileRow, error } = await supabase
     .from("users")
-    .select("full_name, exam_type, target_score, email")
+    .select("full_name, exam_type, exam_goals, target_score, email")
     .eq("id", user.id)
     .single();
 
@@ -58,6 +60,7 @@ export async function getProfileData(): Promise<ProfileData> {
   return {
     full_name: data?.full_name || user.user_metadata?.full_name || "",
     exam_type: data?.exam_type || null,
+    exam_goals: data?.exam_goals || null,
     target_score: data?.target_score || null,
     email: data?.email || user.email || null,
   };

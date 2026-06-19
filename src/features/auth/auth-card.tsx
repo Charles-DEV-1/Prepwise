@@ -90,7 +90,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           {mode === "login" ? "Welcome back" : "Create your account"}
         </CardTitle>
         <CardDescription>
-          Use phone OTP or Google to continue to Prepwise.
+          Use phone OTP or Google to continue to Prepcore.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -160,7 +160,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           Continue with Google
         </Button>
         <p className="mt-5 text-center text-sm text-muted-foreground">
-          {mode === "login" ? "New to Prepwise?" : "Already have an account?"}{" "}
+          {mode === "login" ? "New to Prepcore?" : "Already have an account?"}{" "}
           <Link className="font-medium text-primary" href={switchAuthHref}>
             {mode === "login" ? "Sign up" : "Log in"}
           </Link>

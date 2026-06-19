@@ -36,8 +36,18 @@ export default async function DashboardRoute() {
     user?.email?.split("@")[0] ??
     "Student";
 
-  // Fetch real dashboard data
-  const dashboardData = user ? await getDashboardData(supabase, user.id) : null;
+  const dashboardData = user
+    ? await getDashboardData(supabase, user.id, "jamb")
+    : null;
+  const waecDashboardData = user
+    ? await getDashboardData(supabase, user.id, "waec")
+    : null;
 
-  return <DashboardPage userName={firstName} data={dashboardData} />;
+  return (
+    <DashboardPage
+      userName={firstName}
+      data={dashboardData}
+      dataByExam={{ jamb: dashboardData, waec: waecDashboardData }}
+    />
+  );
 }

@@ -29,7 +29,7 @@ export function PremiumGate({ children, feature = "this feature" }: Props) {
           <Lock className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <p className="font-semibold text-navy">Upgrade to Prepwise Pro</p>
+          <p className="font-semibold text-navy">Upgrade to Prepcore Pro</p>
           <p className="mt-1 text-sm text-slate-500">
             Unlock {feature} and all premium features
           </p>

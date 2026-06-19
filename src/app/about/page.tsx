@@ -14,12 +14,19 @@ export default function AboutPage() {
               The modern AI-powered learning platform Nigerian students deserve.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Prepwise exists to make exam preparation clearer, calmer, and more effective for students preparing for JAMB, WAEC, and NECO.
+              Prepcore exists to make exam preparation clearer, calmer, and more
+              effective for students preparing for JAMB, WAEC, and NECO.
             </p>
           </div>
           <Card className="soft-card">
             <CardContent className="p-6">
-              <Image src="/brand/prepwise-flyer.png" alt="Prepwise student visual" width={900} height={650} className="h-80 rounded-3xl object-cover object-[72%_10%]" />
+              <Image
+                src="/brand/prepcore-flyer.png"
+                alt="Prepcore student visual"
+                width={900}
+                height={650}
+                className="h-80 rounded-3xl object-cover object-[72%_10%]"
+              />
             </CardContent>
           </Card>
         </div>

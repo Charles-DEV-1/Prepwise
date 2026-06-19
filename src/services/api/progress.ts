@@ -1,6 +1,10 @@
 import { createClient } from "@/services/supabase/client";
+import type { ExamType } from "@/types/app";
 
-export async function getProgressData(userId: string) {
+export async function getProgressData(
+  userId: string,
+  examType: ExamType = "jamb",
+) {
   const supabase = createClient();
 
   const { data: sessions, error } = await supabase
@@ -14,6 +18,7 @@ export async function getProgressData(userId: string) {
     `,
     )
     .eq("user_id", userId)
+    .eq("exam_type", examType)
     .order("created_at", { ascending: true });
 
   if (error) {

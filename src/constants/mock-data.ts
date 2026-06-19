@@ -1,4 +1,11 @@
-export const subjects = ["English", "Mathematics", "Physics", "Chemistry", "Biology", "Economics"];
+export const subjects = [
+  "English",
+  "Mathematics",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Economics",
+];
 
 export const dashboardMetrics = {
   streak: 12,
@@ -26,7 +33,8 @@ export const sampleQuestions = [
     prompt: "Choose the option nearest in meaning to: The principal was livid.",
     options: ["calm", "furious", "tired", "confused"],
     answer: "furious",
-    explanation: "Livid means extremely angry, so furious is the closest meaning.",
+    explanation:
+      "Livid means extremely angry, so furious is the closest meaning.",
   },
   {
     id: "q2",
@@ -40,15 +48,18 @@ export const sampleQuestions = [
 
 export const faqs = [
   {
-    question: "Is Prepwise free?",
-    answer: "Prepwise is free to start, with optional premium study plans and advanced analytics.",
+    question: "Is Prepcore free?",
+    answer:
+      "Prepcore is free to start, with optional premium study plans and advanced analytics.",
   },
   {
     question: "Which exams are supported?",
-    answer: "The foundation supports JAMB, WAEC, and NECO with subject-based practice and mock exams.",
+    answer:
+      "The foundation supports JAMB, WAEC, and NECO with subject-based practice and mock exams.",
   },
   {
     question: "Can students use it on phones?",
-    answer: "Yes. Prepwise is web-first and mobile-first, built for fast study sessions on any browser.",
+    answer:
+      "Yes. Prepcore is web-first and mobile-first, built for fast study sessions on any browser.",
   },
 ];

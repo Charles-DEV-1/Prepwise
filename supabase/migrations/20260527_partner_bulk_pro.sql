@@ -7,5 +7,5 @@ alter table public.partners
   add column if not exists student_price_naira integer;
 
 comment on column public.partners.bulk_pro_active is 'When true, all students with user_referrals for this partner get Pro';
-comment on column public.partners.wholesale_price_naira is 'What the center pays Prepwise (bulk deal)';
+comment on column public.partners.wholesale_price_naira is 'What the center pays Prepcore (bulk deal)';
 comment on column public.partners.student_price_naira is 'What the center charges each student (for margin tracking)';

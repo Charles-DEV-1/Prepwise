@@ -138,7 +138,7 @@ group by p.id, p.name, p.slug;
 
 -- Pilot seed (optional — remove or edit for production)
 insert into public.partners (name, slug, city, is_active)
-values ('Prepwise Pilot Center', 'pilot-center', 'Lagos', true)
+values ('Prepcore Pilot Center', 'pilot-center', 'Lagos', true)
 on conflict (slug) do nothing;
 
 insert into public.referral_codes (partner_id, code, label, is_active)
