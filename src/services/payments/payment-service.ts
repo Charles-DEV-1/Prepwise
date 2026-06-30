@@ -128,8 +128,32 @@ export async function createPayment(input: CreatePaymentInput) {
 
 export async function verifyAndActivatePayment(
   transactionId: string,
+  expected?: { userId?: string; txRef?: string },
 ): Promise<VerificationResult> {
   const supabase = createServiceRoleClient();
+
+  if (expected?.userId && expected.txRef) {
+    const { data: ownedPayment, error: ownedPaymentError } = await supabase
+      .from("payments")
+      .select("tx_ref")
+      .eq("tx_ref", expected.txRef)
+      .eq("user_id", expected.userId)
+      .maybeSingle();
+
+    if (ownedPaymentError || !ownedPayment) {
+      console.warn("payment_verify_ownership_failed", {
+        txRef: expected.txRef,
+        userId: expected.userId,
+        ownedPaymentError,
+      });
+      return {
+        success: false,
+        txRef: expected.txRef,
+        error: "payment_not_found",
+      };
+    }
+  }
+
   const verification = await verifyFlutterwaveTransaction(transactionId);
   const data = verification.data;
 
@@ -138,9 +162,20 @@ export async function verifyAndActivatePayment(
     return { success: false, error: "missing_tx_ref" };
   }
 
+  if (expected?.txRef && data.tx_ref !== expected.txRef) {
+    console.warn("payment_verify_tx_ref_mismatch", {
+      expectedTxRef: expected.txRef,
+      actualTxRef: data.tx_ref,
+      transactionId,
+    });
+    return { success: false, txRef: expected.txRef, error: "tx_ref_mismatch" };
+  }
+
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
-    .select("tx_ref, amount, currency, status, processed_at")
+    .select(
+      "tx_ref, user_id, amount, currency, status, processed_at, verification_attempts",
+    )
     .eq("tx_ref", data.tx_ref)
     .maybeSingle();
 
@@ -149,6 +184,15 @@ export async function verifyAndActivatePayment(
       transactionId,
       txRef: data.tx_ref,
       paymentError,
+    });
+    return { success: false, txRef: data.tx_ref, error: "payment_not_found" };
+  }
+
+  if (expected?.userId && payment.user_id !== expected.userId) {
+    console.warn("payment_verify_user_mismatch", {
+      transactionId,
+      txRef: data.tx_ref,
+      expectedUserId: expected.userId,
     });
     return { success: false, txRef: data.tx_ref, error: "payment_not_found" };
   }
@@ -167,7 +211,7 @@ export async function verifyAndActivatePayment(
         failure_reason: verification.message || "Verification failed.",
         flutterwave_transaction_id: data.id,
         provider_response: verification,
-        verification_attempts: 1,
+        verification_attempts: Number(payment.verification_attempts ?? 0) + 1,
         verified_at: new Date().toISOString(),
       } as never)
       .eq("tx_ref", data.tx_ref);

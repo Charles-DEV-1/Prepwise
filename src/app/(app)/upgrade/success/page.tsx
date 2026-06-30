@@ -19,6 +19,7 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     const transactionId =
       searchParams.get("transaction_id") ?? searchParams.get("id");
+    const txRef = searchParams.get("tx_ref");
 
     if (!transactionId) {
       setState({
@@ -27,12 +28,22 @@ export default function PaymentSuccessPage() {
       });
       return;
     }
+    if (!txRef) {
+      setState({
+        status: "failed",
+        message: "Flutterwave did not return your payment reference.",
+      });
+      return;
+    }
     const verifiedTransactionId = transactionId;
+    const verifiedTxRef = txRef;
 
     async function verifyPayment() {
       try {
         const response = await fetch(
-          `/api/payments/verify?transaction_id=${encodeURIComponent(verifiedTransactionId)}`,
+          `/api/payments/verify?transaction_id=${encodeURIComponent(
+            verifiedTransactionId,
+          )}&tx_ref=${encodeURIComponent(verifiedTxRef)}`,
           { cache: "no-store" },
         );
         const data = (await response.json()) as {

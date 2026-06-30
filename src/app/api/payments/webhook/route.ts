@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import {
   markWebhookEventProcessed,
   rememberWebhookEvent,
@@ -30,6 +31,23 @@ function getEventKey(rawBody: string, payload: FlutterwaveWebhookPayload) {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const ipLimit = rateLimit({
+    key: `payments:webhook:ip:${ip}`,
+    limit: 120,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!ipLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many webhook attempts." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+      },
+    );
+  }
+
   const rawBody = await request.text();
 
   if (!verifyFlutterwaveWebhookSignature(rawBody, request.headers)) {

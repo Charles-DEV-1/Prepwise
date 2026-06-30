@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 const FLUTTERWAVE_API_BASE = "https://api.flutterwave.com/v3";
+const FLUTTERWAVE_TIMEOUT_MS = 12000;
 
 type FlutterwaveCustomer = {
   email: string;
@@ -62,8 +63,16 @@ async function flutterwaveFetch<T>(
   retries = 2,
 ): Promise<T> {
   let lastError: unknown;
+  const method = init.method?.toUpperCase() ?? "GET";
+  const maxRetries = method === "POST" ? 0 : retries;
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      FLUTTERWAVE_TIMEOUT_MS,
+    );
+
     try {
       const response = await fetch(`${FLUTTERWAVE_API_BASE}${path}`, {
         ...init,
@@ -73,16 +82,28 @@ async function flutterwaveFetch<T>(
           ...init.headers,
         },
         cache: "no-store",
+        signal: controller.signal,
       });
 
-      const json = (await response.json()) as T;
+      const json = (await response.json().catch(() => null)) as T | null;
       if (!response.ok) {
-        throw new Error(`Flutterwave request failed with ${response.status}`);
+        const shouldRetry = response.status === 429 || response.status >= 500;
+        const message = `Flutterwave request failed with ${response.status}`;
+        if (!shouldRetry || attempt === maxRetries) throw new Error(message);
+        lastError = new Error(message);
+        continue;
       }
+
+      if (!json) throw new Error("Flutterwave returned an invalid response.");
       return json;
     } catch (error) {
       lastError = error;
-      if (attempt === retries) break;
+      if (attempt === maxRetries) break;
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (attempt < maxRetries) {
       await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
     }
   }
