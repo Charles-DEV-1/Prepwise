@@ -66,7 +66,7 @@ export default function PricingPage() {
                     ))}
                   </div>
                   <Button asChild className="mt-6 w-full">
-                    <Link href="/waitlist">Join Waitlist</Link>
+                    <Link href="/login">Login</Link>
                   </Button>
                 </CardContent>
               </Card>

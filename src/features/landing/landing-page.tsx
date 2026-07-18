@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowRight,
   BarChart3,
   BookOpenCheck,
   Brain,
@@ -83,11 +82,6 @@ export function LandingPage() {
               faster, and walk into exam day with real confidence.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <Link href="/waitlist">
-                  Join Waitlist <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
               <Button asChild size="lg" variant="outline">
                 <Link href="/signup">
                   Start free <PlayCircle className="h-4 w-4" />
@@ -354,7 +348,7 @@ export function LandingPage() {
               />
             </div>
             <Button asChild size="lg">
-              <Link href="/waitlist">Join Waitlist</Link>
+              <Link href="/login">Login</Link>
             </Button>
           </div>
         </div>
