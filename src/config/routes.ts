@@ -8,6 +8,7 @@ import {
   Shield,
   Trophy,
   User,
+  UserPlus,
   WalletCards,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ export const appNav = [
   { label: "Weekly Quiz", href: "/weekly-quiz", icon: Trophy },
   { label: "Leaderboard", href: "/leaderboard", icon: BarChart3 },
   { label: "Upgrade", href: "/upgrade", icon: WalletCards },
+  { label: "Referrals", href: "/referrals", icon: UserPlus },
   { label: "Profile", href: "/profile", icon: User },
   { label: "Settings", href: "/settings", icon: Settings },
 ];

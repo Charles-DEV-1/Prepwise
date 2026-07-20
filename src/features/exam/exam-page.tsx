@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 
@@ -28,7 +28,7 @@ import { incrementMockExamUsage } from "@/services/api/usage";
 import { canTakeMockExam } from "@/services/api/usage";
 import {
   getSubjectsByExamType,
-  getRandomQuestionsBySubject,
+  getSessionQuestions,
   type QuestionForSession,
   type SubjectForExam,
 } from "@/services/api/questions";
@@ -231,8 +231,7 @@ export function ExamPage() {
 
     const questionGroups = await Promise.all(
       selectedSubjects.map(async (subject) => {
-        const picked = await getRandomQuestionsBySubject(
-          supabase,
+        const picked = await getSessionQuestions(
           subject.id,
           selectedExamType === "waec"
             ? WAEC_TOTAL_QUESTIONS

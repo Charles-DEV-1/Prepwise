@@ -105,6 +105,26 @@ export async function getRandomQuestionsBySubject(
     .slice(0, limit);
 }
 
+/**
+ * Uses the protected server endpoint. Free users receive only the local
+ * Supabase bank; Pro users receive a shuffled mix that includes cached ALOC
+ * questions. The ALOC token never reaches the browser.
+ */
+export async function getSessionQuestions(
+  subjectId: string,
+  limit: number,
+  examType: ExamType = "jamb",
+): Promise<QuestionForSession[]> {
+  const response = await fetch("/api/questions/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subjectId, limit, examType }),
+  });
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { questions?: QuestionForSession[] };
+  return Array.isArray(payload.questions) ? payload.questions : [];
+}
+
 export async function getSubjectsByExamType(
   supabase: AppSupabaseClient,
   examType: ExamType,

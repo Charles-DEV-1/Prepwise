@@ -10,7 +10,7 @@ import {
 } from "@/lib/referral";
 import { applyReferralFromCookie } from "@/services/api/referral";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Chrome, Loader2, Smartphone } from "lucide-react";
+import { Chrome, Loader2, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,15 +23,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  phoneAuthSchema,
-  otpSchema,
-  type PhoneAuthValues,
-  type OtpValues,
+  emailAuthSchema,
+  emailOtpSchema,
+  type EmailAuthValues,
+  type EmailOtpValues,
 } from "@/lib/validations";
 import {
   signInWithGoogle,
-  signInWithPhone,
-  verifyPhoneOtp,
+  sendEmailOtp,
+  verifyEmailOtp,
 } from "@/services/auth";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
@@ -51,35 +51,48 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   }, [searchParams]);
 
   const [otpSent, setOtpSent] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const phoneForm = useForm<PhoneAuthValues>({
-    resolver: zodResolver(phoneAuthSchema),
-    defaultValues: { phone: "" },
+  const emailForm = useForm<EmailAuthValues>({
+    resolver: zodResolver(emailAuthSchema),
+    defaultValues: { email: "" },
   });
-  const otpForm = useForm<OtpValues>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: { phone: "", token: "" },
+  const otpForm = useForm<EmailOtpValues>({
+    resolver: zodResolver(emailOtpSchema),
+    defaultValues: { email: "", token: "" },
   });
 
-  async function requestOtp(values: PhoneAuthValues) {
+  async function requestOtp(values: EmailAuthValues) {
+    setError("");
     setIsLoading(true);
-    const { error } = await signInWithPhone(values.phone);
+    const { error: requestError } = await sendEmailOtp(
+      values.email,
+      mode === "signup",
+    );
     setIsLoading(false);
-    if (!error) {
-      setPhone(values.phone);
-      otpForm.setValue("phone", values.phone);
+    if (!requestError) {
+      setEmail(values.email);
+      otpForm.setValue("email", values.email);
       setOtpSent(true);
+    } else {
+      setError(requestError.message);
     }
   }
 
-  async function submitOtp(values: OtpValues) {
+  async function submitOtp(values: EmailOtpValues) {
+    setError("");
     setIsLoading(true);
-    const { error } = await verifyPhoneOtp(values.phone, values.token);
+    const { data, error: verifyError } = await verifyEmailOtp(
+      values.email,
+      values.token,
+    );
     setIsLoading(false);
-    if (!error) {
+    if (!verifyError && data.user) {
       await applyReferralFromCookie();
       router.push(next);
+    } else {
+      setError(verifyError?.message ?? "That code is invalid or has expired.");
     }
   }
 
@@ -90,25 +103,27 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           {mode === "login" ? "Welcome back" : "Create your account"}
         </CardTitle>
         <CardDescription>
-          Use phone OTP or Google to continue to Prepcore.
+          Use an email verification code or Google to continue to Prepcore.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {!otpSent ? (
           <form
             className="space-y-4"
-            onSubmit={phoneForm.handleSubmit(requestOtp)}
+            onSubmit={emailForm.handleSubmit(requestOtp)}
           >
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
+              <Label htmlFor="email">Email address</Label>
               <Input
-                id="phone"
-                placeholder="+2348012345678"
-                {...phoneForm.register("phone")}
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@gmail.com"
+                {...emailForm.register("email")}
               />
-              {phoneForm.formState.errors.phone && (
+              {emailForm.formState.errors.email && (
                 <p className="text-xs text-destructive">
-                  {phoneForm.formState.errors.phone.message}
+                  {emailForm.formState.errors.email.message}
                 </p>
               )}
             </div>
@@ -116,9 +131,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Smartphone className="h-4 w-4" />
+                <Mail className="h-4 w-4" />
               )}
-              Send OTP
+              Send verification code
             </Button>
           </form>
         ) : (
@@ -127,10 +142,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             onSubmit={otpForm.handleSubmit(submitOtp)}
           >
             <div className="space-y-2">
-              <Label htmlFor="token">OTP code sent to {phone}</Label>
+              <Label htmlFor="token">Verification code sent to {email}</Label>
               <Input
                 id="token"
                 inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
                 placeholder="123456"
                 {...otpForm.register("token")}
               />
@@ -144,7 +161,20 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Verify and continue
             </Button>
+            <button
+              type="button"
+              className="w-full text-sm font-medium text-primary"
+              disabled={isLoading}
+              onClick={() => void requestOtp({ email })}
+            >
+              Send a new code
+            </button>
           </form>
+        )}
+        {error && (
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
         )}
         <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
@@ -159,6 +189,11 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           <Chrome className="h-4 w-4" />
           Continue with Google
         </Button>
+        {mode === "login" && (
+          <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
+            Signed up with Google? Use <span className="font-medium">Continue with Google</span> to access your account.
+          </p>
+        )}
         <p className="mt-5 text-center text-sm text-muted-foreground">
           {mode === "login" ? "New to Prepcore?" : "Already have an account?"}{" "}
           <Link className="font-medium text-primary" href={switchAuthHref}>

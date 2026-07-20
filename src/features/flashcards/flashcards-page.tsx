@@ -132,7 +132,7 @@ export function FlashcardsPage() {
             <Button asChild size="lg">
               <Link href="/upgrade">
                 <Sparkles className="h-4 w-4" />
-                Upgrade to Pro — ₦2,000
+                Upgrade to Pro — ₦3,000
               </Link>
             </Button>
             <p className="text-xs text-slate-400">

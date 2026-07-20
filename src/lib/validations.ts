@@ -1,12 +1,12 @@
 import { z } from "zod";
 
-export const phoneAuthSchema = z.object({
-  phone: z.string().min(10, "Enter a valid phone number"),
+export const emailAuthSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address"),
 });
 
-export const otpSchema = z.object({
-  phone: z.string().min(10),
-  token: z.string().min(6, "Enter the 6-digit code"),
+export const emailOtpSchema = z.object({
+  email: z.string().trim().email(),
+  token: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
 });
 
 export const onboardingSchema = z.object({
@@ -26,6 +26,6 @@ export const onboardingSchema = z.object({
     ),
 });
 
-export type PhoneAuthValues = z.infer<typeof phoneAuthSchema>;
-export type OtpValues = z.infer<typeof otpSchema>;
+export type EmailAuthValues = z.infer<typeof emailAuthSchema>;
+export type EmailOtpValues = z.infer<typeof emailOtpSchema>;
 export type OnboardingValues = z.infer<typeof onboardingSchema>;

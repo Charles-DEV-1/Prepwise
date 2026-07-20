@@ -198,7 +198,7 @@ export default function UpgradePage() {
               <Sparkles className="h-5 w-5 text-primary" />
               Pro
             </CardTitle>
-            <p className="text-4xl font-bold text-navy">NGN 2,000</p>
+            <p className="text-4xl font-bold text-navy">NGN 3,000</p>
             <p className="text-sm text-slate-500">One-time yearly access</p>
           </CardHeader>
           <CardContent>

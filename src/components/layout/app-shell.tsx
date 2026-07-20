@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { appNav } from "@/config/routes";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { createClient } from "@/services/supabase/client";
 import { getCurrentStreak } from "@/services/api/streak";
@@ -19,6 +21,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { isPro, isLoading } = useUserPlan();
   const [initials, setInitials] = useState("PW");
   const [streak, setStreak] = useState<number | null>(null);
+  const freeAccessPaths = [
+    "/dashboard",
+    "/practice",
+    "/exam",
+    "/results",
+    "/upgrade",
+    "/profile",
+    "/settings",
+    "/referrals",
+  ];
+  const isFreeFeatureLocked =
+    !isLoading &&
+    !isPro &&
+    !freeAccessPaths.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`),
+    );
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -170,7 +188,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 md:py-8">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-6 md:py-8">
+          {isFreeFeatureLocked ? (
+            <Card className="mx-auto mt-12 max-w-xl text-center">
+              <CardContent className="space-y-4 p-8">
+                <Crown className="mx-auto h-10 w-10 text-amber" />
+                <h1 className="text-2xl font-bold text-navy">Pro feature</h1>
+                <p className="text-sm leading-6 text-slate-600">
+                  Practice and mock exams are available on the free plan. Upgrade
+                  to Pro to unlock every other study feature.
+                </p>
+                <Button asChild>
+                  <Link href="/upgrade">
+                    <Sparkles className="h-4 w-4" /> Upgrade to Pro
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

@@ -273,11 +273,20 @@ export function LandingPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              "I finally knew which topics to fix before exam week.",
-              "The mock timer made the real exam feel familiar.",
-              "The explanations are short and actually make sense.",
-            ].map((quote, index) => (
-              <Card key={quote} className="border-border bg-white shadow-sm">
+              {
+                name: "Adaeze O.",
+                quote: "I finally knew which topics to fix before exam week.",
+              },
+              {
+                name: "Emmanuel M.",
+                quote: "The mock timer made the real exam feel familiar.",
+              },
+              {
+                name: "Fatima K.",
+                quote: "The explanations are short and actually make sense.",
+              },
+            ].map(({ name, quote }) => (
+              <Card key={name} className="border-border bg-white shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex gap-1 text-[#D97706]">
                     {Array.from({ length: 5 }).map((_, starIndex) => (
@@ -288,7 +297,7 @@ export function LandingPage() {
                     &quot;{quote}&quot;
                   </p>
                   <p className="mt-5 text-xs font-semibold text-slate-500">
-                    Beta student {index + 1}
+                    {name}
                   </p>
                 </CardContent>
               </Card>

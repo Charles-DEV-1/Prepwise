@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ReferralUrlCapture } from "@/components/referral/referral-url-capture";
+import { UserReferralUrlCapture } from "@/components/referral/user-referral-url-capture";
 import { LandingPage } from "@/features/landing/landing-page";
 
 export default function HomePage() {
@@ -7,6 +8,7 @@ export default function HomePage() {
     <>
       <Suspense fallback={null}>
         <ReferralUrlCapture />
+        <UserReferralUrlCapture />
       </Suspense>
       <LandingPage />
     </>

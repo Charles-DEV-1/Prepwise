@@ -16,7 +16,7 @@ export const PAYMENT_PLANS: Record<PaymentPlanKey, PaymentPlan> = {
     key: "prepcore_pro_annual",
     name: "Prepcore Pro",
     description: "Full Prepcore Pro access for one year.",
-    amount: 2000,
+    amount: 3000,
     currency: "NGN",
     durationDays: 365,
   },

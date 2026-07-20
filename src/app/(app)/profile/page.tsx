@@ -193,7 +193,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <Button asChild size="sm">
-                  <Link href="/upgrade">Upgrade — ₦2,000</Link>
+                  <Link href="/upgrade">Upgrade — ₦3,000</Link>
                 </Button>
               </div>
               <p className="mt-3 text-xs text-slate-500">

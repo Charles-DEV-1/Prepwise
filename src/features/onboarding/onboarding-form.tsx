@@ -27,6 +27,7 @@ import {
   referralErrorMessage,
   type UserReferral,
 } from "@/services/api/referral";
+import { applyUserReferralFromStorage } from "@/services/api/user-referral";
 import type { ExamGoal, ExamType } from "@/types/app";
 
 const examGoalOptions: Array<{
@@ -97,6 +98,7 @@ export function OnboardingForm() {
         }
       }
       await completeOnboarding(values);
+      await applyUserReferralFromStorage();
     },
     onSuccess: () => router.push("/dashboard"),
     onError: (err: Error) => setReferralError(err.message),

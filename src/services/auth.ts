@@ -2,14 +2,32 @@
 
 import { createClient } from "@/services/supabase/client";
 
-export async function signInWithPhone(phone: string) {
+export async function sendEmailOtp(email: string, shouldCreateUser: boolean) {
   const supabase = createClient();
-  return supabase.auth.signInWithOtp({ phone });
+  return supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser },
+  });
 }
 
-export async function verifyPhoneOtp(phone: string, token: string) {
+export async function verifyEmailOtp(email: string, token: string) {
   const supabase = createClient();
-  return supabase.auth.verifyOtp({ phone, token, type: "sms" });
+  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
+
+  // The profile row is created only after Supabase has accepted the code.
+  // This keeps referral, onboarding, and payment foreign keys consistent for
+  // both email-code and Google sign-ins.
+  if (result.data.user) {
+    await supabase.from("users").upsert(
+      {
+        id: result.data.user.id,
+        email: result.data.user.email ?? email,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+  }
+
+  return result;
 }
 
 export async function signInWithGoogle() {

@@ -59,3 +59,8 @@ export type OnboardingProfile = {
   targetScore: number;
   examDate: string;
 };
+
+// Prepcore — User Referral System
+export type UserReferralCode = { id: string; user_id: string; code: string; created_at: string };
+export type UserReferralSignup = { id: string; referrer_id: string; referee_id: string; code: string; signed_up_at: string; converted_to_pro: boolean; converted_at: string | null };
+export type UserReferralReward = { id: string; user_id: string; reward_batch: number; pro_granted: boolean; pro_granted_at: string | null; cash_claimed: boolean; cash_claim_requested_at: string | null; bank_name: string | null; account_number: string | null; account_name: string | null; admin_paid: boolean; admin_paid_at: string | null; notification_sent: boolean; created_at: string };

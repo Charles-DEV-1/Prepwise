@@ -13,8 +13,7 @@ import { createClient } from "@/services/supabase/client";
 import { updateStreak } from "@/services/api/streak";
 import {
   getAvailableYears,
-  getQuestionsBySubjectYear,
-  getRandomQuestionsBySubject,
+  getSessionQuestions,
   getSubjectsByExamType,
   type QuestionForSession,
   type SubjectForExam,
@@ -22,7 +21,7 @@ import {
 import { saveSessionResult } from "@/services/api/sessions";
 import { useExamStore } from "@/store/examStore";
 import { cn } from "@/lib/utils";
-import type { ExamGoal, ExamType } from "@/types/app";
+import type { ExamGoal } from "@/types/app";
 
 const SUBJECTS = [
   { label: "English", id: "11111111-1111-1111-1111-111111111111" },
@@ -144,21 +143,11 @@ export function PracticePage() {
     setSelectedAnswers({});
     setSessionSaved(false);
 
-    const nextQuestions =
-      activeExamType === "waec" && selectedYear
-        ? await getQuestionsBySubjectYear(
-            supabase,
-            selectedSubject.id,
-            "waec",
-            selectedYear,
-            25,
-          )
-        : await getRandomQuestionsBySubject(
-            supabase,
-            selectedSubject.id,
-            25,
-            "jamb",
-          );
+    const nextQuestions = await getSessionQuestions(
+      selectedSubject.id,
+      25,
+      activeExamType,
+    );
 
     setQuestions(nextQuestions);
     setLoading(false);
@@ -167,7 +156,6 @@ export function PracticePage() {
     canUseActiveExam,
     selectedSubject.id,
     selectedYear,
-    supabase,
   ]);
 
   useEffect(() => {
