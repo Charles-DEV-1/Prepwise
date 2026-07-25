@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,16 +18,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { subjects } from "@/constants/mock-data";
 import { getReferralCookie } from "@/lib/referral";
+import { clearUserReferralCode } from "@/lib/user-referral-storage";
 import { onboardingSchema, type OnboardingValues } from "@/lib/validations";
 import { completeOnboarding } from "@/services/api/profile";
 import {
-  applyReferralCode,
+  applyAnyReferralCode,
   applyReferralFromCookie,
   getMyReferral,
   referralErrorMessage,
   type UserReferral,
 } from "@/services/api/referral";
-import { applyUserReferralFromStorage } from "@/services/api/user-referral";
 import type { ExamGoal, ExamType } from "@/types/app";
 
 const examGoalOptions: Array<{
@@ -92,13 +92,13 @@ export function OnboardingForm() {
     mutationFn: async (values: OnboardingValues) => {
       setReferralError(null);
       if (!existingReferral && values.referralCode.trim()) {
-        const result = await applyReferralCode(values.referralCode);
+        const result = await applyAnyReferralCode(values.referralCode);
         if (!result.success) {
           throw new Error(referralErrorMessage(result.error));
         }
       }
       await completeOnboarding(values);
-      await applyUserReferralFromStorage();
+      clearUserReferralCode();
     },
     onSuccess: () => router.push("/dashboard"),
     onError: (err: Error) => setReferralError(err.message),
@@ -207,16 +207,17 @@ export function OnboardingForm() {
                 htmlFor="referralCode"
                 className="flex items-center gap-1.5"
               >
-                <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                Lesson center code (optional)
+                <Users className="h-3.5 w-3.5 text-slate-400" />
+                Referral code (optional)
               </Label>
               <Input
                 id="referralCode"
-                placeholder="e.g. LAGOS-JAMB"
+                placeholder="Enter a centre or friend&apos;s code"
                 {...form.register("referralCode")}
               />
               <p className="text-xs text-slate-500">
-                Enter the code from your lesson center if you have one.
+                Enter a code from your lesson centre or a friend&apos;s referral
+                link.
               </p>
               {form.formState.errors.referralCode && (
                 <p className="text-sm text-destructive">

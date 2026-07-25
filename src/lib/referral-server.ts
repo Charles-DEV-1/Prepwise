@@ -53,5 +53,5 @@ export async function applyReferralFromServerCookies(): Promise<void> {
 
   if (existing) return;
 
-  await supabase.rpc("apply_referral_code", { p_code: code });
+  await supabase.rpc("apply_any_referral_code", { p_code: code });
 }

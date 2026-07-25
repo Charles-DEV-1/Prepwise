@@ -8,6 +8,7 @@ export type ReferralApplyResult = {
   code?: string;
   partner_name?: string;
   partner_id?: string;
+  referral_type?: "partner" | "user";
   error?: string;
 };
 
@@ -57,6 +58,35 @@ export async function applyReferralCode(
   const result = data as ReferralApplyResult | null;
   if (!result) return { success: false, error: "invalid_code" };
   return result;
+}
+
+/**
+ * Applies a referral code from either a lesson centre or another Prepcore
+ * user. Both referral programs use the same shared-link format (`?ref=`), so
+ * onboarding must resolve the code before choosing which program to record.
+ */
+export async function applyAnyReferralCode(
+  code: string,
+): Promise<ReferralApplyResult> {
+  const supabase = createClient();
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) {
+    return { success: false, error: "invalid_code" };
+  }
+
+  const { data, error } = await (
+    supabase as unknown as {
+      rpc: (
+        fn: string,
+        args: { p_code: string },
+      ) => Promise<{ data: ReferralApplyResult | null; error: Error | null }>;
+    }
+  ).rpc("apply_any_referral_code", { p_code: normalized });
+
+  if (error) return { success: false, error: "invalid_code" };
+
+  const result = data as ReferralApplyResult | null;
+  return result ?? { success: false, error: "invalid_code" };
 }
 
 export async function applyReferralFromCookie(): Promise<ReferralApplyResult | null> {
