@@ -106,6 +106,20 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["answers"]["Row"]>;
         Relationships: [];
       };
+      ai_explanation_usage: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          usage_count: number;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ai_explanation_usage"]["Row"]> & {
+          user_id: string;
+          date: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ai_explanation_usage"]["Row"]>;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           id: string;
@@ -238,6 +252,27 @@ export type Database = {
         };
         Insert: Database["public"]["Tables"]["user_referrals"]["Row"];
         Update: Partial<Database["public"]["Tables"]["user_referrals"]["Row"]>;
+        Relationships: [];
+      };
+      user_referral_rewards: {
+        Row: {
+          id: string;
+          user_id: string;
+          reward_batch: number;
+          pro_granted: boolean;
+          pro_granted_at: string | null;
+          cash_claimed: boolean;
+          cash_claim_requested_at: string | null;
+          bank_name: string | null;
+          account_number: string | null;
+          account_name: string | null;
+          admin_paid: boolean;
+          admin_paid_at: string | null;
+          notification_sent: boolean;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["user_referral_rewards"]["Row"]> & { user_id: string };
+        Update: Partial<Database["public"]["Tables"]["user_referral_rewards"]["Row"]>;
         Relationships: [];
       };
       streaks: {

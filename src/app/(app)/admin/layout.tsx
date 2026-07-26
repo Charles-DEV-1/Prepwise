@@ -8,10 +8,14 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 const adminLinks = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/revenue", label: "Revenue" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/referral-rewards", label: "Referral rewards" },
   { href: "/admin/partners", label: "Partners" },
   { href: "/admin/referrals", label: "Referrals" },
-  { href: "/admin/question-upload", label: "Question upload" },
-  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/question-upload", label: "Questions" },
 ];
 
 export default async function AdminLayout({
