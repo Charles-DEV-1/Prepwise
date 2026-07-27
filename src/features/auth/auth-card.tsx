@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -54,6 +54,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const tokenInputRef = useRef<HTMLInputElement>(null);
   const emailForm = useForm<EmailAuthValues>({
     resolver: zodResolver(emailAuthSchema),
     defaultValues: { email: "" },
@@ -62,21 +64,38 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     resolver: zodResolver(emailOtpSchema),
     defaultValues: { email: "", token: "" },
   });
+  const tokenField = otpForm.register("token");
+
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendSeconds((seconds) => seconds - 1),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [resendSeconds]);
 
   async function requestOtp(values: EmailAuthValues) {
     setError("");
     setIsLoading(true);
+    const normalizedEmail = values.email.trim().toLowerCase();
     const { error: requestError } = await sendEmailOtp(
-      values.email,
+      normalizedEmail,
       mode === "signup",
     );
     setIsLoading(false);
     if (!requestError) {
-      setEmail(values.email);
-      otpForm.setValue("email", values.email);
+      setEmail(normalizedEmail);
+      otpForm.setValue("email", normalizedEmail);
       setOtpSent(true);
+      setResendSeconds(60);
+      window.setTimeout(() => tokenInputRef.current?.focus(), 0);
     } else {
-      setError(requestError.message);
+      setError(
+        requestError.message.includes("rate limit")
+          ? "Too many codes were requested. Please wait a few minutes before trying again."
+          : requestError.message,
+      );
     }
   }
 
@@ -92,7 +111,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       await applyReferralFromCookie();
       router.push(next);
     } else {
-      setError(verifyError?.message ?? "That code is invalid or has expired.");
+      setError(
+        verifyError?.message ?? "That code is invalid or has expired. Request a new code and try again.",
+      );
     }
   }
 
@@ -148,8 +169,13 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 maxLength={6}
+                pattern="[0-9]{6}"
                 placeholder="123456"
-                {...otpForm.register("token")}
+                {...tokenField}
+                ref={(element) => {
+                  tokenField.ref(element);
+                  tokenInputRef.current = element;
+                }}
               />
               {otpForm.formState.errors.token && (
                 <p className="text-xs text-destructive">
@@ -164,10 +190,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             <button
               type="button"
               className="w-full text-sm font-medium text-primary"
-              disabled={isLoading}
+              disabled={isLoading || resendSeconds > 0}
               onClick={() => void requestOtp({ email })}
             >
-              Send a new code
+              {resendSeconds > 0
+                ? `Send a new code in ${resendSeconds}s`
+                : "Send a new code"}
             </button>
           </form>
         )}

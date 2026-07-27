@@ -14,6 +14,7 @@ const adminLinks = [
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/referral-rewards", label: "Referral rewards" },
   { href: "/admin/partners", label: "Partners" },
+  { href: "/admin/partner-program", label: "Affiliate program" },
   { href: "/admin/referrals", label: "Referrals" },
   { href: "/admin/question-upload", label: "Questions" },
 ];
@@ -53,12 +54,15 @@ export default async function AdminLayout({
 
   return (
     <div className="space-y-6">
-      <nav className="flex flex-wrap gap-2 border-b border-border pb-4">
+      <nav
+        className="flex gap-2 overflow-x-auto border-b border-border pb-4 [-ms-overflow-style:none] [scrollbar-width:none]"
+        aria-label="Admin navigation"
+      >
         {adminLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-softblue hover:text-primary"
+            className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-softblue hover:text-primary"
           >
             {link.label}
           </Link>

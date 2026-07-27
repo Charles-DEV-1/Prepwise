@@ -14,6 +14,7 @@ import { useUserPlan } from "@/hooks/use-user-plan";
 import { createClient } from "@/services/supabase/client";
 import { getCurrentStreak } from "@/services/api/streak";
 import { UserMenu } from "./user-menu";
+import { PointsCelebration } from "@/components/ui/points-celebration";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -79,6 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <PointsCelebration />
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:flex lg:flex-col">
         <div className="flex-1 overflow-y-auto">
           <SidebarContent pathname={pathname} />

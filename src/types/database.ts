@@ -222,6 +222,30 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["partners"]["Row"]>;
         Relationships: [];
       };
+      partner_accounts: {
+        Row: { id: string; email: string; full_name: string; phone: string; business_name: string | null; city: string | null; partner_type: string | null; referral_code: string | null; status: string | null; commission_per_sale: number | null; total_earned: number | null; total_withdrawn: number | null; pending_balance: number | null; reserved_balance: number | null; minimum_withdrawal: number | null; bank_name: string | null; account_number: string | null; account_name: string | null; bank_code: string | null; password_hash: string | null; created_at: string | null; updated_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["partner_accounts"]["Row"]> & { email: string; full_name: string; phone: string };
+        Update: Partial<Database["public"]["Tables"]["partner_accounts"]["Row"]>;
+        Relationships: [];
+      };
+      partner_referral_conversions: {
+        Row: { id: string; partner_id: string; user_id: string; user_email: string; user_name: string; signed_up_at: string; converted_to_pro: boolean | null; converted_at: string | null; commission_amount: number | null; commission_status: string | null };
+        Insert: Partial<Database["public"]["Tables"]["partner_referral_conversions"]["Row"]> & { partner_id: string; user_id: string; user_email: string; user_name: string };
+        Update: Partial<Database["public"]["Tables"]["partner_referral_conversions"]["Row"]>;
+        Relationships: [];
+      };
+      partner_withdrawals: {
+        Row: { id: string; partner_id: string; amount: number; bank_name: string; account_number: string; account_name: string; bank_code: string; status: string | null; requested_at: string | null; completed_at: string | null; failure_reason: string | null; flutterwave_transfer_id: string | null; flutterwave_reference: string | null; flutterwave_status: string | null };
+        Insert: Partial<Database["public"]["Tables"]["partner_withdrawals"]["Row"]> & { partner_id: string; amount: number; bank_name: string; account_number: string; account_name: string; bank_code: string };
+        Update: Partial<Database["public"]["Tables"]["partner_withdrawals"]["Row"]>;
+        Relationships: [];
+      };
+      partner_sessions: {
+        Row: { id: string; partner_id: string; token: string; expires_at: string; created_at: string | null };
+        Insert: Partial<Database["public"]["Tables"]["partner_sessions"]["Row"]> & { partner_id: string; token: string; expires_at: string };
+        Update: Partial<Database["public"]["Tables"]["partner_sessions"]["Row"]>;
+        Relationships: [];
+      };
       referral_codes: {
         Row: {
           id: string;
@@ -282,6 +306,7 @@ export type Database = {
           current_count: number;
           longest_count: number;
           last_activity_date: string | null;
+          last_activity_at: string | null;
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["streaks"]["Row"]> & {
@@ -443,6 +468,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      award_partner_commission_for_payment: { Args: { p_user_id: string }; Returns: boolean };
+      reserve_partner_withdrawal: { Args: { p_partner_id: string; p_amount: number; p_bank_name: string; p_account_number: string; p_account_name: string; p_bank_code: string }; Returns: string };
+      fail_partner_withdrawal: { Args: { p_withdrawal_id: string; p_reason: string; p_response?: Json | null }; Returns: undefined };
+      complete_partner_withdrawal: { Args: { p_withdrawal_id: string; p_transfer_id: string; p_response: Json }; Returns: undefined };
       get_random_questions: {
         Args: { p_subject_id: string; p_limit: number };
         Returns: Array<{

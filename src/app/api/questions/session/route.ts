@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/services/supabase/server";
 import { createServiceRoleClient } from "@/services/supabase/admin";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { hasTrustedOrigin, noStoreJson, readSafeJson } from "@/lib/api-security";
 
 const ALOC_URL = "https://questions.aloc.com.ng/api/v2/m";
 const MAX_SESSION_QUESTIONS = 180;
@@ -127,18 +128,21 @@ async function isProUser(userId: string) {
 }
 
 export async function POST(request: Request) {
+  if (!hasTrustedOrigin(request)) return noStoreJson({ error: "Invalid request origin." }, { status: 403 });
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return noStoreJson({ error: "Unauthorized" }, { status: 401 });
+  const limitResult = rateLimit({ key: `questions:session:${user.id}:${getClientIp(request)}`, limit: 30, windowMs: 10 * 60 * 1000 });
+  if (!limitResult.allowed) return noStoreJson({ error: "Too many question requests. Please wait and try again." }, { status: 429, headers: { "Retry-After": String(limitResult.retryAfterSeconds) } });
 
-  const body = (await request.json().catch(() => null)) as SessionRequest | null;
+  const body = await readSafeJson<SessionRequest>(request);
   const subjectId = body?.subjectId;
   const examType = body?.examType;
   const limit = Math.min(Math.max(Number(body?.limit) || 25, 1), MAX_SESSION_QUESTIONS);
   if (!subjectId || (examType !== "jamb" && examType !== "waec")) {
-    return NextResponse.json({ error: "Invalid question request" }, { status: 400 });
+    return noStoreJson({ error: "Invalid question request" }, { status: 400 });
   }
 
   const admin = createServiceRoleClient();
@@ -147,7 +151,7 @@ export async function POST(request: Request) {
     .select("id, name")
     .eq("id", subjectId)
     .maybeSingle();
-  if (!subject) return NextResponse.json({ error: "Unknown subject" }, { status: 404 });
+  if (!subject) return noStoreJson({ error: "Unknown subject" }, { status: 404 });
 
   const isPro = await isProUser(user.id);
   let query = admin
@@ -165,7 +169,7 @@ export async function POST(request: Request) {
   const initialResult = await query;
   let questions = initialResult.data;
   if (initialResult.error) {
-    return NextResponse.json({ error: "Could not load questions" }, { status: 500 });
+    return noStoreJson({ error: "Could not load questions" }, { status: 500 });
   }
 
   // Seed a provider batch once per subject/exam combination. Subsequent Pro
@@ -215,5 +219,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ questions: shuffle((questions ?? []) as StoredQuestion[]).slice(0, limit), isPro });
+  return noStoreJson({ questions: shuffle((questions ?? []) as StoredQuestion[]).slice(0, limit), isPro });
 }

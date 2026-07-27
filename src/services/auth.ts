@@ -6,7 +6,12 @@ export async function sendEmailOtp(email: string, shouldCreateUser: boolean) {
   const supabase = createClient();
   return supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser },
+    options: {
+      shouldCreateUser,
+      // If a user chooses the fallback link in the email, it returns to the
+      // same secure server callback that establishes their session.
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
   });
 }
 

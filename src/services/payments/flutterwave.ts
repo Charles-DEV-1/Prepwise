@@ -168,7 +168,12 @@ export function verifyFlutterwaveWebhookSignature(
     return safeEqual(signature, expected);
   }
 
-  const legacySecretHash = process.env.FLUTTERWAVE_SECRET_HASH;
+  // Flutterwave's dashboard calls this value "Secret Hash" and sends it in
+  // the legacy `verif-hash` header. Reuse the existing webhook-secret env
+  // variable so deployments do not need a second copy of the same secret.
+  const legacySecretHash =
+    process.env.FLUTTERWAVE_SECRET_HASH ??
+    process.env.FLUTTERWAVE_WEBHOOK_SECRET;
   const legacyHeader = headers.get("verif-hash");
   if (legacySecretHash && legacyHeader) {
     return safeEqual(legacyHeader, legacySecretHash);

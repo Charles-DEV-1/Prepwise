@@ -1,9 +1,10 @@
 // Prepcore — User Referral System
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { referralClaimSchema } from "@/lib/user-referral-validations";
 import { createClient } from "@/services/supabase/server";
 import { processCashRewardClaim } from "@/services/user-referrals/claim";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { hasTrustedOrigin, noStoreJson, readSafeJson } from "@/lib/api-security";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ const claimRequestSchema = referralClaimSchema.extend({
 
 export async function POST(request: Request) {
   try {
+    if (!hasTrustedOrigin(request)) return noStoreJson({ error: "Invalid request origin." }, { status: 403 });
     const supabase = await createClient();
     const {
       data: { user },
@@ -20,13 +22,15 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return noStoreJson({ error: "Unauthorized" }, { status: 401 });
     }
+    const limit = rateLimit({ key: `referrals:claim:${user.id}:${getClientIp(request)}`, limit: 3, windowMs: 24 * 60 * 60 * 1000 });
+    if (!limit.allowed) return noStoreJson({ error: "Too many cash-claim attempts. Please try again tomorrow." }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
 
-    const body = (await request.json()) as unknown;
+    const body = await readSafeJson<unknown>(request);
     const parsed = claimRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
+      return noStoreJson(
         { error: parsed.error.issues[0]?.message ?? "Invalid request." },
         { status: 400 },
       );
@@ -56,17 +60,9 @@ export async function POST(request: Request) {
       userEmail: profileRow?.email ?? user.email ?? "unknown@prepcore.com.ng",
     });
 
-    return NextResponse.json({ success: true });
+    return noStoreJson({ success: true });
   } catch (error) {
     console.error("referral_claim_failed", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Could not submit cash claim.",
-      },
-      { status: 500 },
-    );
+    return noStoreJson({ error: "Could not submit cash claim." }, { status: 500 });
   }
 }

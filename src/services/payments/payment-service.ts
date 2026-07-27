@@ -240,6 +240,20 @@ export async function verifyAndActivatePayment(
     error?: string;
   } | null;
 
+  // This RPC is idempotent: a student can only convert once. Keep it after
+  // payment activation so no referral is rewarded for an unverified checkout.
+  if (result?.success === true) {
+    const { error: commissionError } = await supabase.rpc(
+      "award_partner_commission_for_payment",
+      { p_user_id: payment.user_id } as never,
+    );
+    if (commissionError) {
+      // Payment remains valid; the conversion stays unclaimed and can be
+      // retried safely on a later verified payment request.
+      console.error("partner_commission_award_failed", commissionError);
+    }
+  }
+
   return {
     success: result?.success === true,
     txRef: data.tx_ref,

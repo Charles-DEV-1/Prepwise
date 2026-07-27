@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   Medal,
+  Handshake,
   PlayCircle,
   Sparkles,
   Star,
@@ -331,6 +332,28 @@ export function LandingPage() {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16">
+        <div className="container text-center">
+          <Handshake className="mx-auto h-8 w-8 text-primary" />
+          <Badge className="mt-4 border-blue-200 bg-softblue text-primary">
+            Partner program
+          </Badge>
+          <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-bold tracking-normal text-navy sm:text-4xl">
+            Help students win. Earn with every Pro referral.
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
+            Tutors, schools, lesson centres, and education creators earn ₦600
+            whenever a student they refer pays for Prepcore Pro.
+          </p>
+          <Link
+            href="/partners/register"
+            className="mt-6 inline-flex items-center gap-2 border-b-2 border-dotted border-primary pb-1 text-lg font-bold text-primary transition hover:border-solid hover:text-navy"
+          >
+            Become a Prepcore partner <Handshake className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 

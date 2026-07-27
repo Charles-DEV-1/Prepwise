@@ -31,6 +31,12 @@ export function PublicNavbar() {
               {item.label}
             </Link>
           ))}
+          <Link
+            href="/partners/register"
+            className="border-b-2 border-dotted border-primary pb-0.5 text-sm font-semibold text-primary transition hover:border-solid hover:text-navy"
+          >
+            Partner with us
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" className="hidden sm:inline-flex">

@@ -8,6 +8,7 @@ type StreakRow = {
   current_count: number;
   longest_count: number;
   last_activity_date: string | null;
+  last_activity_at: string | null;
 };
 
 function getDateKey(date = new Date()) {
@@ -18,20 +19,9 @@ function getDateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
-function getYesterdayDateKey() {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  return getDateKey(yesterday);
-}
-
-function isActiveStreakDate(lastActivityDate: string | null) {
-  if (!lastActivityDate) return false;
-
-  return (
-    lastActivityDate === getDateKey() ||
-    lastActivityDate === getYesterdayDateKey()
-  );
+function isActiveStreak(lastActivityAt: string | null) {
+  if (!lastActivityAt) return false;
+  return Date.now() - new Date(lastActivityAt).getTime() <= 24 * 60 * 60 * 1000;
 }
 
 export async function getCurrentStreak(
@@ -40,13 +30,13 @@ export async function getCurrentStreak(
 ) {
   const { data: streak } = await supabase
     .from("streaks")
-    .select("id, current_count, longest_count, last_activity_date")
+    .select("id, current_count, longest_count, last_activity_date, last_activity_at")
     .eq("user_id", userId)
     .maybeSingle<StreakRow>();
 
   if (!streak) return 0;
 
-  if (isActiveStreakDate(streak.last_activity_date)) {
+  if (isActiveStreak(streak.last_activity_at)) {
     return streak.current_count;
   }
 
@@ -65,11 +55,10 @@ export async function updateStreak(
   userId: string,
 ) {
   const today = getDateKey();
-  const yesterday = getYesterdayDateKey();
 
   const { data: streak } = await supabase
     .from("streaks")
-    .select("id, current_count, longest_count, last_activity_date")
+    .select("id, current_count, longest_count, last_activity_date, last_activity_at")
     .eq("user_id", userId)
     .maybeSingle<StreakRow>();
 
@@ -80,15 +69,23 @@ export async function updateStreak(
       current_count: 1,
       longest_count: 1,
       last_activity_date: today,
+      last_activity_at: new Date().toISOString(),
     } as never);
     return;
   }
 
-  // Already completed a qualifying activity today.
-  if (streak.last_activity_date === today) return;
+  // More activity on the same day keeps the 24-hour streak window alive but
+  // does not increment the day count twice.
+  if (streak.last_activity_date === today) {
+    await supabase
+      .from("streaks")
+      .update({ last_activity_at: new Date().toISOString() } as never)
+      .eq("id", streak.id);
+    return;
+  }
 
-  // Completed a qualifying activity yesterday - continue streak.
-  if (streak.last_activity_date === yesterday) {
+  // A new calendar day within 24 hours continues the streak.
+  if (isActiveStreak(streak.last_activity_at)) {
     const newCount = streak.current_count + 1;
     await supabase
       .from("streaks")
@@ -96,6 +93,7 @@ export async function updateStreak(
         current_count: newCount,
         longest_count: Math.max(newCount, streak.longest_count),
         last_activity_date: today,
+        last_activity_at: new Date().toISOString(),
       } as never)
       .eq("id", streak.id);
     // Award 5 points for maintaining streak
@@ -110,6 +108,7 @@ export async function updateStreak(
       current_count: 1,
       longest_count: streak.longest_count,
       last_activity_date: today,
+      last_activity_at: new Date().toISOString(),
     } as never)
     .eq("id", streak.id);
 }

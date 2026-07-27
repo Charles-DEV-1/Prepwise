@@ -38,11 +38,42 @@ export async function awardPoints(
     else if (score >= 70) points += 10;
   }
 
-  await supabase.rpc("add_user_points", {
+  const { data: before } = await supabase
+    .from("user_points")
+    .select("total_points")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const previousPoints = Number(before?.total_points ?? 0);
+  const { error } = await supabase.rpc("add_user_points", {
     p_user_id: userId,
     p_points: points,
     p_session_type: type,
   } as never);
+
+  if (error) return 0;
+
+  const { data: after } = await supabase
+    .from("user_points")
+    .select("total_points")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const nextPoints = Number(after?.total_points ?? previousPoints + points);
+  const previousRank = getRankInfo(previousPoints);
+  const nextRank = getRankInfo(nextPoints);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("prepcore:points-awarded", {
+        detail: {
+          points,
+          rankUp:
+            previousRank.name !== nextRank.name
+              ? { previous: previousRank.name, next: nextRank.name, emoji: nextRank.emoji }
+              : undefined,
+        },
+      }),
+    );
+  }
 
   return points;
 }
