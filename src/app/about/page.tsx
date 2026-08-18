@@ -1,7 +1,15 @@
 import Image from "next/image";
+import type { Metadata } from "next";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "About Prepcore",
+  description:
+    "Learn how Prepcore helps Nigerian students prepare confidently for JAMB, WAEC, and NECO with focused digital study tools.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (
@@ -21,7 +29,7 @@ export default function AboutPage() {
           <Card className="soft-card">
             <CardContent className="p-6">
               <Image
-                src="/brand/prepcore-flyer.png"
+                src="/Prepcore_app_logo_design_202606131935.jpeg"
                 alt="Prepcore student visual"
                 width={900}
                 height={650}

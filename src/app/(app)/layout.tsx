@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { AppShell } from "@/components/layout/app-shell";
 import { ReferralApplicator } from "@/components/referral/referral-applicator";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 

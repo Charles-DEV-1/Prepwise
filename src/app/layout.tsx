@@ -10,6 +10,48 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),
+  keywords: siteConfig.keywords,
+  applicationName: siteConfig.name,
+  authors: [{ name: siteConfig.name }],
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_NG",
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [
+      {
+        url: "/Prepcore_app_logo_design_202606131935.jpeg",
+        width: 1366,
+        height: 768,
+        alt: "Prepcore - Nigerian exam preparation for JAMB, WAEC, and NECO",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: ["/Prepcore_app_logo_design_202606131935.jpeg"],
+  },
   icons: {
     icon: [
       {
@@ -65,9 +107,37 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: siteConfig.name,
+        url: siteConfig.url,
+        logo: `${siteConfig.url}/favicons/android-chrome-512x512.png`,
+        description: siteConfig.description,
+      },
+      {
+        "@type": "WebSite",
+        name: siteConfig.name,
+        url: siteConfig.url,
+        description: siteConfig.description,
+        inLanguage: "en-NG",
+        publisher: {
+          "@type": "Organization",
+          name: siteConfig.name,
+        },
+      },
+    ],
+  };
+
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

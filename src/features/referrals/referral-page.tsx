@@ -43,8 +43,9 @@ import {
 } from "@/services/api/user-referral";
 import { createClient } from "@/services/supabase/client";
 import type { UserReferralReward } from "@/types/app";
+import { siteConfig } from "@/config/site";
 
-const APP_ORIGIN = "https://prepcore.com.ng";
+const APP_ORIGIN = siteConfig.url;
 
 function buildReferralLink(code: string) {
   return `${APP_ORIGIN}/signup?ref=${code}`;

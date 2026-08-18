@@ -1,9 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Check } from "lucide-react";
 import { PublicNavbar } from "@/components/layout/public-navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Start preparing for JAMB, WAEC, and NECO free with Prepcore, then unlock deeper AI-powered exam preparation tools as they become available.",
+  alternates: { canonical: "/pricing" },
+};
 
 const plans = [
   {
@@ -13,7 +21,7 @@ const plans = [
   },
   {
     name: "Prepcore Pro",
-    price: "Coming soon",
+    price: "₦3,000",
     items: [
       "AI explanations",
       "Personalized study plans",
