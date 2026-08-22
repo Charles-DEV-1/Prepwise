@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, Search, X, Crown, Sparkles } from "lucide-react";
+import { Menu, Search, X, Crown, Sparkles, Flame } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appNav } from "@/config/routes";
 import { cn } from "@/lib/utils";
@@ -179,8 +179,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               {/* Real streak */}
               {streak !== null && streak > 0 && (
-                <Badge className="border-amber-200 bg-amber-50 text-amber-700">
-                  🔥 {streak} day streak
+                <Badge className="hidden shrink-0 gap-1 border-amber-200 bg-amber-50 px-2 text-amber-700 min-[390px]:inline-flex sm:px-2.5">
+                  <Flame className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                  <span>{streak}</span>
+                  <span className="hidden sm:inline">day streak</span>
                 </Badge>
               )}
 
