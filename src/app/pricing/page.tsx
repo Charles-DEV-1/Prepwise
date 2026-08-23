@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Start preparing for JAMB, WAEC, and NECO free with Prepcore, then unlock deeper AI-powered exam preparation tools as they become available.",
+    "Start preparing for JAMB, WAEC, and NECO free with Prepcore, then unlock full JAMB and WAEC mock exams, AI explanations, and flashcards with Pro.",
   alternates: { canonical: "/pricing" },
 };
 
@@ -17,16 +17,18 @@ const plans = [
   {
     name: "Starter",
     price: "Free",
-    items: ["Past questions", "Basic mock exams", "Starter progress tracking"],
+    items: ["Unlimited subject practice", "Instant answer feedback", "Progress tracking and weekly quiz", "Study streaks"],
   },
   {
     name: "Prepcore Pro",
     price: "₦3,000",
     items: [
-      "AI explanations",
+      "Full JAMB and WAEC mock exams",
+      "60 English + 40 questions per selected subject",
+      "Subject switching, timers, question maps and results",
+      "AI explanations and flashcards",
       "Personalized study plans",
       "Weak-topic analytics",
-      "Leaderboard boosts",
     ],
   },
 ];
@@ -42,7 +44,7 @@ export default function PricingPage() {
               Simple pricing for ambitious students.
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              Start free and upgrade when you need deeper AI guidance.
+              Start free and upgrade when you are ready for full mock-exam preparation.
             </p>
           </div>
           <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
@@ -74,7 +76,9 @@ export default function PricingPage() {
                     ))}
                   </div>
                   <Button asChild className="mt-6 w-full">
-                    <Link href="/login">Login</Link>
+                    <Link href={plan.name.includes("Pro") ? "/upgrade" : "/signup"}>
+                      {plan.name.includes("Pro") ? "Unlock Pro" : "Start free"}
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>

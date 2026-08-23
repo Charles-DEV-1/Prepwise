@@ -3,6 +3,7 @@
 import { Check, Crown, Loader2, ShieldCheck, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +12,9 @@ import { getMyReferral, type UserReferral } from "@/services/api/referral";
 
 const FREE_FEATURES = [
   { text: "Unlimited practice mode", included: true },
-  { text: "3 mock exams per day", included: true },
   { text: "Score tracking and progress", included: true },
   { text: "Weekly quiz", included: true },
+  { text: "Timed mock exams", included: false },
   { text: "Flashcards", included: false },
   { text: "Unlimited mock exams", included: false },
   { text: "AI explanations", included: false },
@@ -23,7 +24,9 @@ const FREE_FEATURES = [
 const PRO_FEATURES = [
   "Everything in Free",
   "Flashcards for all subjects",
-  "Unlimited mock exams",
+  "Full JAMB and WAEC mock exams",
+  "English 60-question and 40-question subject sections",
+  "Subject switching, question maps, timers, and detailed results",
   "AI explanations",
   "Advanced weak-topic analysis",
   "Downloadable result cards",
@@ -36,6 +39,7 @@ export default function UpgradePage() {
   const [referral, setReferral] = useState<UserReferral | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState("");
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     void getMyReferral().then(setReferral);
@@ -189,7 +193,8 @@ export default function UpgradePage() {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-primary bg-softblue shadow-soft">
+        <motion.div initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0.12 : 0.38, delay: 0.08 }}><Card className="relative overflow-hidden border-primary bg-softblue shadow-soft">
+          {!reducedMotion && <motion.div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(96,165,250,.16)_48%,transparent_66%)]" animate={{ x: ["-100%", "100%"] }} transition={{ duration: 3.8, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }} />}
           <div className="absolute right-4 top-4">
             <Badge className="bg-primary text-white">Most popular</Badge>
           </div>
@@ -241,7 +246,7 @@ export default function UpgradePage() {
               Pay with Flutterwave
             </Button>
           </CardContent>
-        </Card>
+        </Card></motion.div>
       </div>
     </div>
   );

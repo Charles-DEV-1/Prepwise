@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/services/supabase/client";
 import { cn } from "@/lib/utils";
+import { Stagger, StaggerItem } from "@/components/ui/motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type LeaderboardEntry = {
   user_id: string;
@@ -154,8 +156,10 @@ export function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-slate-500">Loading leaderboard...</p>
+      <div className="mx-auto max-w-3xl space-y-3 py-8">
+        <Skeleton className="mx-auto h-7 w-48" />
+        <Skeleton className="mx-auto h-4 w-36" />
+        <Card className="mt-8 p-5 space-y-3">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-16 w-full" />)}</Card>
       </div>
     );
   }
@@ -193,13 +197,13 @@ export function LeaderboardPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <Stagger className="space-y-2" delay={0.08}>
               {leaderboard.map((entry, index) => {
                 const isMe = entry.user_id === currentUserId;
                 const isBelowTop20 = entry.rank > 20;
 
                 return (
-                  <div key={entry.user_id}>
+                  <StaggerItem key={entry.user_id}>
                     {/* Divider before current user if below top 20 */}
                     {isBelowTop20 && index > 0 && (
                       <div className="my-3 flex items-center gap-3">
@@ -211,7 +215,6 @@ export function LeaderboardPage() {
                       </div>
                     )}
                     <div
-                      key={entry.user_id}
                       className={cn(
                         "flex items-center justify-between rounded-xl border p-4 transition",
                         isMe
@@ -263,10 +266,10 @@ export function LeaderboardPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </Stagger>
           )}
         </CardContent>
       </Card>

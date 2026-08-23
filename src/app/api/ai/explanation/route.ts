@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/services/supabase/server";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.1-8b-instant";
+// llama-3.1-8b-instant was retired by Groq on 2026-08-16.
+// Keep this overridable so a future provider model migration does not require code changes.
+const MODEL = process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-20b";
 const REQUEST_TIMEOUT_MS = 15_000;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 20;

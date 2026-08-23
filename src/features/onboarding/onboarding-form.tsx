@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,6 +63,7 @@ export function OnboardingForm() {
     null,
   );
   const [referralError, setReferralError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
@@ -105,7 +107,7 @@ export function OnboardingForm() {
   });
 
   return (
-    <Card className="mx-auto w-full max-w-2xl shadow-soft">
+    <motion.div initial={{ opacity: 0, y: reducedMotion ? 0 : 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reducedMotion ? 0.12 : 0.38, delay: 0.22 }}><Card className="mx-auto w-full max-w-2xl shadow-soft">
       <CardHeader>
         <CardTitle>Personalize your Prepcore plan</CardTitle>
         <CardDescription>
@@ -241,6 +243,6 @@ export function OnboardingForm() {
           </Button>
         </form>
       </CardContent>
-    </Card>
+    </Card></motion.div>
   );
 }

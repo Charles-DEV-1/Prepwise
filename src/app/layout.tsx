@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   keywords: siteConfig.keywords,
   applicationName: siteConfig.name,
-  authors: [{ name: siteConfig.name }],
-  creator: siteConfig.name,
+  authors: [{ name: "Charles Ozebo", url: "https://www.linkedin.com/in/ozebo-charles-b88471343/" }],
+  creator: "Charles Ozebo",
   publisher: siteConfig.name,
   formatDetection: {
     email: false,
@@ -112,10 +112,22 @@ export default function RootLayout({
     "@graph": [
       {
         "@type": "Organization",
+        "@id": `${siteConfig.url}/#organization`,
         name: siteConfig.name,
         url: siteConfig.url,
         logo: `${siteConfig.url}/favicons/android-chrome-512x512.png`,
         description: siteConfig.description,
+        founder: { "@id": `${siteConfig.url}/about#charles-ozebo` },
+      },
+      {
+        "@type": "Person",
+        "@id": `${siteConfig.url}/about#charles-ozebo`,
+        name: "Charles Ozebo",
+        jobTitle: "Software Engineer and Founder of Prepcore",
+        url: `${siteConfig.url}/about`,
+        sameAs: ["https://www.linkedin.com/in/ozebo-charles-b88471343/"],
+        worksFor: { "@id": `${siteConfig.url}/#organization` },
+        description: "Computer Science student and software engineer who founded Prepcore to make JAMB and WAEC preparation more accessible and effective for Nigerian students.",
       },
       {
         "@type": "WebSite",

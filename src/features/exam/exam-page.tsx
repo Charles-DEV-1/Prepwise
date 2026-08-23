@@ -25,7 +25,6 @@ import { useAppStore } from "@/store/use-app-store";
 import { cn } from "@/lib/utils";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { incrementMockExamUsage } from "@/services/api/usage";
-import { canTakeMockExam } from "@/services/api/usage";
 import {
   getSubjectsByExamType,
   getSessionQuestions,
@@ -43,11 +42,18 @@ const EXAM_SUBJECTS = [
 
 const JAMB_DURATION = 7200;
 const WAEC_DURATION = 3600;
-const JAMB_QUESTIONS_PER_SUBJECT = 45;
+const JAMB_ENGLISH_QUESTIONS = 60;
+const JAMB_OTHER_SUBJECT_QUESTIONS = 40;
 const WAEC_TOTAL_QUESTIONS = 50;
 
 type Question = QuestionForSession & {
   subject_label: string;
+};
+
+type SubjectQuestionGroup = {
+  subjectId: string;
+  subjectLabel: string;
+  questions: Question[];
 };
 
 type ExamPhase = "setup" | "exam" | "submitting";
@@ -55,12 +61,13 @@ type ExamPhase = "setup" | "exam" | "submitting";
 export function ExamPage() {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
-  const { isPro } = useUserPlan();
-  const [limitReached, setLimitReached] = useState(false);
-  const [remaining, setRemaining] = useState(3);
+  const { isPro, isLoading: planLoading } = useUserPlan();
   const [phase, setPhase] = useState<ExamPhase>("setup");
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questionGroups, setQuestionGroups] = useState<SubjectQuestionGroup[]>([]);
+  const [activeSubjectId, setActiveSubjectId] = useState("");
+  const [activeQuestionIndexes, setActiveQuestionIndexes] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
+  const [examLoadError, setExamLoadError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(JAMB_DURATION);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [selectedExamType, setSelectedExamType] = useState<ExamType>("jamb");
@@ -72,8 +79,6 @@ export function ExamPage() {
   const [selectedWaecSubjectId, setSelectedWaecSubjectId] = useState("");
 
   const {
-    activeQuestionIndex,
-    setActiveQuestionIndex,
     flaggedQuestionIds,
     toggleFlag,
     selectedAnswers,
@@ -81,7 +86,10 @@ export function ExamPage() {
     resetExam,
   } = useAppStore();
 
-  const question = questions[activeQuestionIndex];
+  const questions = questionGroups.flatMap((group) => group.questions);
+  const activeGroup = questionGroups.find((group) => group.subjectId === activeSubjectId);
+  const activeQuestionIndex = activeQuestionIndexes[activeSubjectId] ?? 0;
+  const question = activeGroup?.questions[activeQuestionIndex];
   const selectedWaecSubject = waecSubjects.find(
     (subject) => subject.id === selectedWaecSubjectId,
   );
@@ -191,26 +199,25 @@ export function ExamPage() {
   const timerRed = seconds < 10 * 60;
   const timerAmber = seconds < 30 * 60 && !timerRed;
 
+  if (!planLoading && !isPro) {
+    return (
+      <Card className="mx-auto max-w-xl text-center">
+        <CardContent className="space-y-4 p-8">
+          <Sparkles className="mx-auto h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold text-navy">Mock exams are a Pro feature</h1>
+          <p className="text-sm leading-6 text-slate-600">
+            Unlock full JAMB and WAEC mock exams, subject switching, timers, question maps, and detailed results with Prepcore Pro.
+          </p>
+          <Button asChild><NextLink href="/upgrade">View Pro features</NextLink></Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   async function startExam() {
     setLoading(true);
+    setExamLoadError(null);
     resetExam();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      const { allowed, remaining } = await canTakeMockExam(
-        supabase,
-        user.id,
-        isPro,
-      );
-      if (!allowed) {
-        setLimitReached(true);
-        setLoading(false);
-        return;
-      }
-      setRemaining(remaining - 1);
-    }
 
     const selectedSubjects =
       selectedExamType === "waec"
@@ -229,32 +236,59 @@ export function ExamPage() {
               : EXAM_SUBJECTS.slice(1)),
           ];
 
-    const questionGroups = await Promise.all(
-      selectedSubjects.map(async (subject) => {
+    try {
+      const nextQuestionGroups = await Promise.all(
+        selectedSubjects.map(async (subject) => {
         const picked = await getSessionQuestions(
           subject.id,
           selectedExamType === "waec"
             ? WAEC_TOTAL_QUESTIONS
-            : JAMB_QUESTIONS_PER_SUBJECT,
+            : subject.label.toLowerCase().includes("english")
+              ? JAMB_ENGLISH_QUESTIONS
+              : JAMB_OTHER_SUBJECT_QUESTIONS,
           selectedExamType,
         );
-        return picked.map((question) => ({
-          ...question,
-          subject_label: subject.label,
-        }));
-      }),
-    );
-
-    // Shuffle all questions together
-    const shuffled = questionGroups.flat().sort(() => Math.random() - 0.5);
-    setQuestions(shuffled);
-    setSeconds(selectedExamType === "waec" ? WAEC_DURATION : JAMB_DURATION);
-    setPhase("exam");
-    setLoading(false);
+          return {
+            subjectId: subject.id,
+            subjectLabel: subject.label,
+            questions: picked.map((question) => ({
+              ...question,
+              subject_label: subject.label,
+            })),
+          };
+        }),
+      );
+      const firstSubjectId = nextQuestionGroups[0]?.subjectId ?? "";
+      setQuestionGroups(nextQuestionGroups);
+      setActiveSubjectId(firstSubjectId);
+      setActiveQuestionIndexes(
+        Object.fromEntries(nextQuestionGroups.map((group) => [group.subjectId, 0])),
+      );
+      setSeconds(selectedExamType === "waec" ? WAEC_DURATION : JAMB_DURATION);
+      setPhase("exam");
+    } catch (error) {
+      console.error("Could not start exam", error);
+      setExamLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load exam questions. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const answeredCount = Object.keys(selectedAnswers).length;
+  const answeredCount = questions.filter((item) => selectedAnswers[item.id]).length;
   const unansweredCount = questions.length - answeredCount;
+  const activeAnsweredCount = (activeGroup?.questions ?? []).filter(
+    (item) => selectedAnswers[item.id],
+  ).length;
+  const activeUnansweredCount = (activeGroup?.questions.length ?? 0) - activeAnsweredCount;
+
+  function setSubjectQuestionIndex(index: number) {
+    if (!activeSubjectId) return;
+    setActiveQuestionIndexes((current) => ({ ...current, [activeSubjectId]: index }));
+  }
 
   // ── SETUP SCREEN ──────────────────────────────────────────
   if (phase === "setup") {
@@ -384,28 +418,9 @@ export function ExamPage() {
                 ready before beginning.
               </p>
             </div>
-            {limitReached && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center space-y-3">
-                <p className="font-semibold text-red-700">
-                  Daily limit reached
-                </p>
-                <p className="text-sm text-slate-600">
-                  Free accounts can take 3 mock exams per day. Upgrade to Pro
-                  for unlimited exams.
-                </p>
-                <Button asChild size="sm">
-                  <NextLink href="/upgrade">
-                    <Sparkles className="h-4 w-4" />
-                    Upgrade to Pro
-                  </NextLink>
-                </Button>
-              </div>
-            )}
-
-            {!limitReached && !isPro && (
-              <p className="text-center text-xs text-slate-400">
-                Free plan: {remaining} mock exam{remaining !== 1 ? "s" : ""}{" "}
-                remaining today
+            {examLoadError && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {examLoadError}
               </p>
             )}
             <Button
@@ -446,12 +461,7 @@ export function ExamPage() {
           <div>
             <CardTitle>{examTitle}</CardTitle>
             <p className="text-sm text-slate-500 mt-1">
-              Question {activeQuestionIndex + 1} of {questions.length}
-              {question && (
-                <span className="ml-2 text-primary font-medium">
-                  · {question.subject_label}
-                </span>
-              )}
+              {activeGroup?.subjectLabel ?? "Subject"}: {activeQuestionIndex + 1} of {activeGroup?.questions.length ?? 0}
             </p>
           </div>
           <div
@@ -470,6 +480,16 @@ export function ExamPage() {
         </CardHeader>
 
         <CardContent className="p-6 pt-0">
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-1" aria-label="Exam subjects">
+            {questionGroups.map((group) => {
+              const groupAnswered = group.questions.filter((item) => selectedAnswers[item.id]).length;
+              return (
+                <Button key={group.subjectId} size="sm" variant={activeSubjectId === group.subjectId ? "default" : "outline"} className="shrink-0" onClick={() => setActiveSubjectId(group.subjectId)}>
+                  {group.subjectLabel} {groupAnswered}/{group.questions.length}
+                </Button>
+              );
+            })}
+          </div>
           {question && (
             <>
               {/* Year badge */}
@@ -522,15 +542,15 @@ export function ExamPage() {
                     variant="outline"
                     disabled={activeQuestionIndex === 0}
                     onClick={() =>
-                      setActiveQuestionIndex(activeQuestionIndex - 1)
+                      setSubjectQuestionIndex(activeQuestionIndex - 1)
                     }
                   >
                     Previous
                   </Button>
                   <Button
-                    disabled={activeQuestionIndex === questions.length - 1}
+                    disabled={activeQuestionIndex === (activeGroup?.questions.length ?? 1) - 1}
                     onClick={() =>
-                      setActiveQuestionIndex(activeQuestionIndex + 1)
+                      setSubjectQuestionIndex(activeQuestionIndex + 1)
                     }
                   >
                     Next
@@ -547,12 +567,12 @@ export function ExamPage() {
         <CardHeader>
           <CardTitle className="text-base">Question map</CardTitle>
           <p className="text-xs text-slate-500">
-            {answeredCount} answered · {unansweredCount} remaining
+            {activeAnsweredCount} answered · {activeUnansweredCount} skipped in {activeGroup?.subjectLabel ?? "this subject"}
           </p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-5 gap-1.5">
-            {questions.map((item, index) => (
+            {(activeGroup?.questions ?? []).map((item, index) => (
               <button
                 key={`${item.id}-${index}`}
                 className={cn(
@@ -564,7 +584,7 @@ export function ExamPage() {
                     "border-green-400 bg-green-50 text-green-700",
                   flaggedQuestionIds.includes(item.id) && "ring-2 ring-amber",
                 )}
-                onClick={() => setActiveQuestionIndex(index)}
+                onClick={() => setSubjectQuestionIndex(index)}
               >
                 {index + 1}
               </button>

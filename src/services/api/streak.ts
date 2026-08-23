@@ -71,7 +71,8 @@ export async function updateStreak(
       last_activity_date: today,
       last_activity_at: new Date().toISOString(),
     } as never);
-    return;
+    emitStreakIncrease(1);
+    return 1;
   }
 
   // More activity on the same day keeps the 24-hour streak window alive but
@@ -81,7 +82,7 @@ export async function updateStreak(
       .from("streaks")
       .update({ last_activity_at: new Date().toISOString() } as never)
       .eq("id", streak.id);
-    return;
+    return null;
   }
 
   // A new calendar day within 24 hours continues the streak.
@@ -98,7 +99,8 @@ export async function updateStreak(
       .eq("id", streak.id);
     // Award 5 points for maintaining streak
     await awardPoints(supabase, userId, "streak");
-    return;
+    emitStreakIncrease(newCount);
+    return newCount;
   }
 
   // Missed one or more days - start a fresh streak from today's activity.
@@ -111,4 +113,12 @@ export async function updateStreak(
       last_activity_at: new Date().toISOString(),
     } as never)
     .eq("id", streak.id);
+  emitStreakIncrease(1);
+  return 1;
+}
+
+function emitStreakIncrease(streak: number) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("prepcore:streak-increased", { detail: { streak } }));
+  }
 }

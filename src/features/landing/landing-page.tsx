@@ -258,6 +258,52 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section id="pricing" className="bg-white py-16">
+        <div className="container">
+          <div className="mx-auto max-w-2xl text-center">
+            <Badge className="border-blue-200 bg-softblue text-primary">Simple pricing</Badge>
+            <h2 className="mt-4 text-4xl font-bold tracking-normal text-navy">
+              Start free. Upgrade when you&apos;re ready for exam mode.
+            </h2>
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              Build a daily practice habit for free, then unlock full mock exams and deeper study tools with one straightforward annual payment.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-2">
+            <Card className="border-border bg-white shadow-sm">
+              <CardContent className="p-7">
+                <p className="text-lg font-bold text-navy">Free</p>
+                <p className="mt-4 text-4xl font-bold text-navy">₦0</p>
+                <p className="mt-1 text-sm text-slate-500">A solid place to begin.</p>
+                <ul className="mt-6 space-y-3 text-sm text-slate-600">
+                  {["Unlimited subject practice", "Instant answer feedback", "Score tracking and weekly quiz", "Study streaks and progress basics"].map((item) => (
+                    <li key={item} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />{item}</li>
+                  ))}
+                </ul>
+                <Button asChild variant="outline" className="mt-7 w-full"><Link href="/signup">Start practising free</Link></Button>
+              </CardContent>
+            </Card>
+
+            <Card className="relative overflow-hidden border-primary bg-gradient-to-br from-[#EFF6FF] via-white to-blue-50 shadow-[0_22px_56px_rgba(37,99,235,0.16)]">
+              <div className="absolute right-5 top-5"><Badge className="bg-primary text-white">Best for exam prep</Badge></div>
+              <CardContent className="p-7">
+                <div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /><p className="text-lg font-bold text-navy">Prepcore Pro</p></div>
+                <p className="mt-4 text-4xl font-bold text-navy">₦3,000</p>
+                <p className="mt-1 text-sm text-slate-500">One payment for one year of access.</p>
+                <ul className="mt-6 space-y-3 text-sm text-slate-700">
+                  {["Everything in Free", "Full JAMB and WAEC mock exams", "60 English + 40 questions per selected subject", "Subject switching, timers, question maps and results", "AI explanations and all flashcards"].map((item) => (
+                    <li key={item} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />{item}</li>
+                  ))}
+                </ul>
+                <Button asChild className="mt-7 w-full"><Link href="/upgrade">Unlock Pro exam mode</Link></Button>
+                <p className="mt-3 text-center text-xs text-slate-500">Secure Flutterwave payment · Access activates after verification</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       <section id="results" className="bg-white py-16">
         <div className="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div>

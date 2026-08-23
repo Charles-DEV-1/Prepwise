@@ -1,26 +1,13 @@
 import { createClient } from "@/services/supabase/server";
 import { createServiceRoleClient } from "@/services/supabase/admin";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { hasTrustedOrigin, noStoreJson, readSafeJson } from "@/lib/api-security";
+import {
+  hasTrustedOrigin,
+  noStoreJson,
+  readSafeJson,
+} from "@/lib/api-security";
 
-const ALOC_URL = "https://questions.aloc.com.ng/api/v2/m";
 const MAX_SESSION_QUESTIONS = 180;
-const ALOC_BATCH_SIZE = 40;
-
-const subjectSlugs: Record<string, string> = {
-  english: "english",
-  mathematics: "mathematics",
-  physics: "physics",
-  chemistry: "chemistry",
-  biology: "biology",
-  economics: "economics",
-  government: "government",
-  literature: "englishlit",
-  crs: "crk",
-  geography: "geography",
-  commerce: "commerce",
-  accounting: "accounting",
-};
 
 type SessionRequest = {
   subjectId?: string;
@@ -40,56 +27,24 @@ type StoredQuestion = {
   exam_type: "jamb" | "waec";
 };
 
+function isRenderableQuestion(question: StoredQuestion): boolean {
+  const prompt = question.prompt?.trim();
+  if (!prompt || /^solution\s*:/i.test(prompt)) return false;
+
+  // Raw MathML is provider markup, not a learner-facing question. Exclude it
+  // from sessions rather than showing a solution/XML blob in the question card.
+  if (/<\/?(?:math|mrow|mi|mn|mo|mfrac|msup)\b/i.test(prompt)) return false;
+
+  return (
+    Object.keys(question.options ?? {}).length >= 2 &&
+    Boolean(question.options?.[question.correct_answer])
+  );
+}
+
 function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function optionMap(value: unknown): Record<string, string> | null {
-  if (Array.isArray(value)) {
-    const keys = ["A", "B", "C", "D", "E"];
-    const mapped = Object.fromEntries(
-      value
-        .filter((item): item is string => typeof item === "string")
-        .map((item, index) => [keys[index] ?? String(index + 1), item]),
-    );
-    return Object.keys(mapped).length >= 2 ? mapped : null;
-  }
-  if (!value || typeof value !== "object") return null;
-  const mapped = Object.entries(value as Record<string, unknown>).reduce<
-    Record<string, string>
-  >((result, [key, item]) => {
-    if (typeof item === "string") {
-      result[key.replace(/^option\s*/i, "").toUpperCase()] = item;
-    }
-    return result;
-  }, {});
-  return Object.keys(mapped).length >= 2 ? mapped : null;
-}
-
-function normalizeAlocQuestion(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  const row = value as Record<string, unknown>;
-  const prompt = row.question ?? row.prompt ?? row.text;
-  const options = optionMap(row.options ?? row.option ?? row.choices);
-  const answer = String(row.answer ?? row.correct_answer ?? row.correct_option ?? "")
-    .replace(/^option\s*/i, "")
-    .trim()
-    .toUpperCase();
-  const correctAnswer = options?.[answer]
-    ? answer
-    : Object.entries(options ?? {}).find(([, text]) => text.trim() === String(row.answer ?? "").trim())?.[0];
-
-  if (typeof prompt !== "string" || !options || !correctAnswer) return null;
-  return {
-    source_question_id: String(row.id ?? row.question_id ?? `${prompt}-${answer}`),
-    prompt,
-    options,
-    correct_answer: correctAnswer,
-    explanation: String(row.solution ?? row.explanation ?? ""),
-    topic: String(row.topic ?? row.section ?? ""),
-    year: Number.isFinite(Number(row.year)) ? Number(row.year) : null,
-  };
-}
 
 async function isProUser(userId: string) {
   const supabase = createServiceRoleClient();
@@ -101,9 +56,9 @@ async function isProUser(userId: string) {
     .maybeSingle();
   const hasIndividualPro = Boolean(
     data &&
-      data.plan === "pro" &&
-      data.status === "active" &&
-      (!data.current_period_end || data.current_period_end > now),
+    data.plan === "pro" &&
+    data.status === "active" &&
+    (!data.current_period_end || data.current_period_end > now),
   );
   if (hasIndividualPro) return true;
 
@@ -121,26 +76,58 @@ async function isProUser(userId: string) {
     .maybeSingle();
   return Boolean(
     partner &&
-      partner.is_active &&
-      partner.bulk_pro_active &&
-      (!partner.bulk_pro_expires_at || partner.bulk_pro_expires_at > now),
+    partner.is_active &&
+    partner.bulk_pro_active &&
+    (!partner.bulk_pro_expires_at || partner.bulk_pro_expires_at > now),
   );
 }
 
 export async function POST(request: Request) {
-  if (!hasTrustedOrigin(request)) return noStoreJson({ error: "Invalid request origin." }, { status: 403 });
+  try {
+    return await handlePost(request);
+  } catch (error) {
+    // Always provide a JSON response to the browser, even if an upstream
+    // provider or unexpected database error fails during the request.
+    console.error(
+      "Question session route failed unexpectedly",
+      error instanceof Error ? error.name : String(error),
+    );
+    return noStoreJson(
+      { error: "Question service is temporarily unavailable. Please try again." },
+      { status: 500 },
+    );
+  }
+}
+
+async function handlePost(request: Request) {
+  if (!hasTrustedOrigin(request))
+    return noStoreJson({ error: "Invalid request origin." }, { status: 403 });
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return noStoreJson({ error: "Unauthorized" }, { status: 401 });
-  const limitResult = rateLimit({ key: `questions:session:${user.id}:${getClientIp(request)}`, limit: 30, windowMs: 10 * 60 * 1000 });
-  if (!limitResult.allowed) return noStoreJson({ error: "Too many question requests. Please wait and try again." }, { status: 429, headers: { "Retry-After": String(limitResult.retryAfterSeconds) } });
+  const limitResult = rateLimit({
+    key: `questions:session:${user.id}:${getClientIp(request)}`,
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limitResult.allowed)
+    return noStoreJson(
+      { error: "Too many question requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limitResult.retryAfterSeconds) },
+      },
+    );
 
   const body = await readSafeJson<SessionRequest>(request);
   const subjectId = body?.subjectId;
   const examType = body?.examType;
-  const limit = Math.min(Math.max(Number(body?.limit) || 25, 1), MAX_SESSION_QUESTIONS);
+  const limit = Math.min(
+    Math.max(Number(body?.limit) || 25, 1),
+    MAX_SESSION_QUESTIONS,
+  );
   if (!subjectId || (examType !== "jamb" && examType !== "waec")) {
     return noStoreJson({ error: "Invalid question request" }, { status: 400 });
   }
@@ -151,73 +138,60 @@ export async function POST(request: Request) {
     .select("id, name")
     .eq("id", subjectId)
     .maybeSingle();
-  if (!subject) return noStoreJson({ error: "Unknown subject" }, { status: 404 });
+  if (!subject)
+    return noStoreJson({ error: "Unknown subject" }, { status: 404 });
 
   const isPro = await isProUser(user.id);
-  let query = admin
+
+  // Imported provider questions are a Pro entitlement. Preserve the existing
+  // free-plan behavior by reading only the local Supabase question bank.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const baseQuery = (admin.from("questions") as any)
+    .select(
+      "id, prompt, options, correct_answer, explanation, topic, year, subject_id, exam_type",
+    )
+    .eq("subject_id", subjectId)
+    .eq("exam_type", examType);
+  if (!isPro) baseQuery.eq("source", "supabase");
+
+  if (!isPro) {
+    const { data, error } = await baseQuery.limit(Math.max(limit * 4, limit));
+    if (error)
+      return noStoreJson(
+        { error: "Could not load questions" },
+        { status: 500 },
+      );
+    return noStoreJson({
+      questions: shuffle((data ?? []) as StoredQuestion[])
+        .filter(isRenderableQuestion)
+        .slice(0, limit),
+      isPro,
+    });
+  }
+
+  // Provider refreshes are deliberately not performed in an interactive
+  // practice/exam request. ALOC is intermittently unreachable from this
+  // runtime; waiting on it made learners wait 8–26 seconds. Existing cached
+  // ALOC rows remain available for Pro users, while cache refresh belongs in a
+  // scheduled admin job rather than the learner request path.
+
+  const query = admin
     .from("questions")
-    .select("id, prompt, options, correct_answer, explanation, topic, year, subject_id, exam_type")
+    .select(
+      "id, prompt, options, correct_answer, explanation, topic, year, subject_id, exam_type",
+    )
     .eq("subject_id", subjectId)
     .eq("exam_type", examType)
-    .limit(Math.max(limit * 4, ALOC_BATCH_SIZE));
-  if (!isPro) {
-    // `source` is added by the accompanying SQL migration; generated types
-    // will include it after the next Supabase type generation.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    query = (query as any).eq("source", "supabase");
-  }
-  const initialResult = await query;
-  let questions = initialResult.data;
-  if (initialResult.error) {
+    .limit(limit * 4);
+  const { data: questions, error: questionsError } = await query;
+  if (questionsError) {
     return noStoreJson({ error: "Could not load questions" }, { status: 500 });
   }
 
-  // Seed a provider batch once per subject/exam combination. Subsequent Pro
-  // sessions shuffle the stored rows and make no ALOC request.
-  const { count: cachedAlocCount } = isPro
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? await (admin.from("questions") as any)
-        .select("id", { count: "exact", head: true })
-        .eq("subject_id", subjectId)
-        .eq("exam_type", examType)
-        .eq("source", "aloc")
-    : { count: 0 };
-
-  if (isPro && (cachedAlocCount ?? 0) === 0) {
-    const token = process.env.ALOC_ACCESS_TOKEN;
-    const slug = subjectSlugs[subject.name.trim().toLowerCase()];
-    if (token && slug) {
-      const type = examType === "jamb" ? "utme" : "wassce";
-      const response = await fetch(`${ALOC_URL}/${ALOC_BATCH_SIZE}?subject=${encodeURIComponent(slug)}&type=${type}`, {
-        headers: { Accept: "application/json", AccessToken: token },
-        signal: AbortSignal.timeout(10_000),
-        cache: "no-store",
-      });
-      if (response.ok) {
-        const payload = (await response.json()) as { data?: unknown } | unknown[];
-        const raw = Array.isArray(payload) ? payload : Array.isArray(payload.data) ? payload.data : [];
-        const imported = raw.map(normalizeAlocQuestion).filter(Boolean).map((question) => ({
-          ...question,
-          subject_id: subjectId,
-          exam_type: examType,
-          source: "aloc",
-        }));
-        if (imported.length) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (admin.from("questions") as any).upsert(imported, {
-            onConflict: "source,source_question_id",
-            ignoreDuplicates: true,
-          } as never);
-          ({ data: questions } = await admin
-            .from("questions")
-            .select("id, prompt, options, correct_answer, explanation, topic, year, subject_id, exam_type")
-            .eq("subject_id", subjectId)
-            .eq("exam_type", examType)
-            .limit(Math.max(limit * 4, ALOC_BATCH_SIZE)));
-        }
-      }
-    }
-  }
-
-  return noStoreJson({ questions: shuffle((questions ?? []) as StoredQuestion[]).slice(0, limit), isPro });
+  return noStoreJson({
+    questions: shuffle((questions ?? []) as StoredQuestion[])
+      .filter(isRenderableQuestion)
+      .slice(0, limit),
+    isPro,
+  });
 }

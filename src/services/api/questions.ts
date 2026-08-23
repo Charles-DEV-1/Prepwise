@@ -115,13 +115,48 @@ export async function getSessionQuestions(
   limit: number,
   examType: ExamType = "jamb",
 ): Promise<QuestionForSession[]> {
+  return getQuestionsFromSessionApi({ subjectId, limit, examType });
+}
+
+export async function getYearSessionQuestions(
+  subjectId: string,
+  limit: number,
+  examType: ExamType,
+  year: number,
+): Promise<QuestionForSession[]> {
+  return getQuestionsFromSessionApi({ subjectId, limit, examType, year });
+}
+
+async function getQuestionsFromSessionApi(input: {
+  subjectId: string;
+  limit: number;
+  examType: ExamType;
+  year?: number;
+}): Promise<QuestionForSession[]> {
   const response = await fetch("/api/questions/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subjectId, limit, examType }),
+    body: JSON.stringify(input),
   });
-  if (!response.ok) return [];
-  const payload = (await response.json()) as { questions?: QuestionForSession[] };
+  const rawPayload = await response.text();
+  let payload: {
+    error?: string;
+    questions?: QuestionForSession[];
+  } = {};
+  if (rawPayload) {
+    try {
+      payload = JSON.parse(rawPayload) as typeof payload;
+    } catch {
+      throw new Error(
+        response.ok
+          ? "Question service returned an invalid response. Please try again."
+          : "Could not load questions. Please try again.",
+      );
+    }
+  }
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Could not load questions");
+  }
   return Array.isArray(payload.questions) ? payload.questions : [];
 }
 

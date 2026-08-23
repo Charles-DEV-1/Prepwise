@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { getAIExplanation } from "@/services/api/ai-explanation";
+import { ExplanationReveal } from "@/components/ui/motion";
 
 type Props = {
   question: string;
@@ -88,7 +90,8 @@ export function AIExplanation({
   // Already generated — show it
   if (aiText) {
     return (
-      <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4 space-y-2">
+      <ExplanationReveal revealKey={aiText}>
+      <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 space-y-2 shadow-[0_12px_30px_rgba(37,99,235,.08)]">
         <div
           className="flex items-center justify-between cursor-pointer"
           onClick={() => setExpanded(!expanded)}
@@ -108,10 +111,11 @@ export function AIExplanation({
             <ChevronDown className="h-4 w-4 text-purple-400" />
           )}
         </div>
-        {expanded && (
-          <p className="text-sm text-slate-700 leading-6">{aiText}</p>
-        )}
+        <AnimatePresence initial={false}>
+          {expanded && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }} className="text-sm leading-6 text-slate-700">{aiText}</motion.p>}
+        </AnimatePresence>
       </div>
+      </ExplanationReveal>
     );
   }
 

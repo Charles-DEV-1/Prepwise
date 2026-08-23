@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/services/supabase/client";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber, ScoreRing, Stagger, StaggerItem } from "@/components/ui/motion";
 import type { ExamType } from "@/types/app";
 
 type Answer = {
@@ -434,15 +435,18 @@ export function ResultsPage({ id }: { id: string }) {
           {examType.toUpperCase()} complete
         </Badge>
         <div className="mt-6 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="flex items-center gap-5">
+            <ScoreRing value={score} className="hidden sm:grid" />
+            <div>
             <p className="text-sm font-medium text-slate-500">Your score</p>
+            <h1 className="sr-only">Your score: {score}%</h1>
             <h1
               className={cn(
-                "mt-1 text-7xl font-bold tracking-tight",
+                "mt-1 text-7xl font-bold tracking-tight sm:hidden",
                 scoreColor,
               )}
             >
-              {score}%
+              <AnimatedNumber value={score} suffix="%" className="sm:hidden" />
             </h1>
             <p className="mt-2 text-base font-medium text-slate-600">
               {correctCount} correct out of {totalQuestions} questions
@@ -454,6 +458,7 @@ export function ResultsPage({ id }: { id: string }) {
                   ? "Good effort. Focus on your weak subjects to improve."
                   : "Keep going - consistent practice will raise your score."}
             </p>
+            </div>
           </div>
 
           {/* Share buttons */}
@@ -624,9 +629,9 @@ export function ResultsPage({ id }: { id: string }) {
       </section>
 
       {/* Subject breakdown */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Stagger className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" delay={0.1}>
         {subjectStats.map((stat) => (
-          <Card key={stat.label} className="border-border bg-white shadow-sm">
+          <StaggerItem key={stat.label}><Card className="border-border bg-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5">
             <CardContent className="p-5">
               <p className="font-semibold text-navy">{stat.label}</p>
               <p
@@ -646,9 +651,9 @@ export function ResultsPage({ id }: { id: string }) {
               </p>
               <Progress value={stat.percent} />
             </CardContent>
-          </Card>
+          </Card></StaggerItem>
         ))}
-      </section>
+      </Stagger>
 
       {/* Performance + Wrong answers */}
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">

@@ -30,7 +30,7 @@ export function PointsCelebration() {
           initial={{ opacity: 0, y: 20, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -12, scale: 0.96 }}
-          className="fixed bottom-5 left-1/2 z-[80] w-[min(23rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-primary/20 bg-white p-4 shadow-2xl"
+          className="fixed inset-x-4 bottom-4 z-[80] w-auto rounded-2xl border border-primary/20 bg-white p-4 shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[23rem]"
           role="status"
         >
           {event.rankUp ? (

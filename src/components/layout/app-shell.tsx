@@ -15,6 +15,7 @@ import { createClient } from "@/services/supabase/client";
 import { getCurrentStreak } from "@/services/api/streak";
 import { UserMenu } from "./user-menu";
 import { PointsCelebration } from "@/components/ui/points-celebration";
+import { PageTransition, StreakCelebration } from "@/components/ui/motion";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,7 +26,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const freeAccessPaths = [
     "/dashboard",
     "/practice",
-    "/exam",
     "/results",
     "/upgrade",
     "/profile",
@@ -76,11 +76,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setStreak(await getCurrentStreak(supabase, user.id));
     }
     void loadUserData();
+    // A tab can stay open past the 24-hour expiry boundary. Refresh the
+    // server-backed value so an expired streak visibly becomes 0 without a reload.
+    const intervalId = window.setInterval(() => void loadUserData(), 60_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const updateVisibleStreak = (event: Event) => {
+      setStreak((event as CustomEvent<{ streak: number }>).detail.streak);
+    };
+    window.addEventListener("prepcore:streak-increased", updateVisibleStreak);
+    return () =>
+      window.removeEventListener("prepcore:streak-increased", updateVisibleStreak);
   }, []);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <PointsCelebration />
+      <StreakCelebration />
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border bg-white/90 px-4 py-5 backdrop-blur-xl lg:flex lg:flex-col">
         <div className="flex-1 overflow-y-auto">
           <SidebarContent pathname={pathname} />
@@ -179,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               {/* Real streak */}
               {streak !== null && streak > 0 && (
-                <Badge className="hidden shrink-0 gap-1 border-amber-200 bg-amber-50 px-2 text-amber-700 min-[390px]:inline-flex sm:px-2.5">
+                <Badge className="hidden shrink-0 gap-1 border-red-200 bg-red-50 px-2 text-red-600 min-[390px]:inline-flex sm:px-2.5">
                   <Flame className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                   <span>{streak}</span>
                   <span className="hidden sm:inline">day streak</span>
@@ -199,8 +213,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Crown className="mx-auto h-10 w-10 text-amber" />
                 <h1 className="text-2xl font-bold text-navy">Pro feature</h1>
                 <p className="text-sm leading-6 text-slate-600">
-                  Practice and mock exams are available on the free plan. Upgrade
-                  to Pro to unlock every other study feature.
+                  Mock exams, flashcards, AI explanations, and advanced study
+                  tools are available with Prepcore Pro.
                 </p>
                 <Button asChild>
                   <Link href="/upgrade">
@@ -210,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </CardContent>
             </Card>
           ) : (
-            children
+            <PageTransition key={pathname}>{children}</PageTransition>
           )}
         </main>
       </div>

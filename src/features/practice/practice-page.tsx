@@ -4,6 +4,7 @@ import { awardPoints } from "@/services/api/points";
 import { ReportQuestion } from "@/components/ui/report-question";
 import { AIExplanation } from "@/components/ui/ai-explanation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
 import { saveSessionResult } from "@/services/api/sessions";
 import { useExamStore } from "@/store/examStore";
 import { cn } from "@/lib/utils";
+import { AnswerFeedback, Stagger, StaggerItem } from "@/components/ui/motion";
 import type { ExamGoal } from "@/types/app";
 
 const SUBJECTS = [
@@ -59,6 +61,9 @@ export function PracticePage() {
     Record<string, string>
   >({});
   const [sessionSaved, setSessionSaved] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [questionDirection, setQuestionDirection] = useState<1 | -1>(1);
+  const reducedMotion = useReducedMotion();
 
   const supabase = useMemo(() => createClient(), []);
   const canUseActiveExam = examGoals.includes(activeExamType);
@@ -142,15 +147,25 @@ export function PracticePage() {
     setAnswered(0);
     setSelectedAnswers({});
     setSessionSaved(false);
+    setLoadError(null);
 
-    const nextQuestions = await getSessionQuestions(
-      selectedSubject.id,
-      25,
-      activeExamType,
-    );
-
-    setQuestions(nextQuestions);
-    setLoading(false);
+    try {
+      const nextQuestions = await getSessionQuestions(
+        selectedSubject.id,
+        25,
+        activeExamType,
+      );
+      setQuestions(nextQuestions);
+    } catch (error) {
+      setQuestions([]);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load questions. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [
     activeExamType,
     canUseActiveExam,
@@ -180,17 +195,7 @@ export function PracticePage() {
 
     if (questionIndex === questions.length - 1) {
       void savePracticeSession(updatedAnswers, nextAccuracy);
-    } else {
-      void updatePracticeStreak();
     }
-  }
-
-  async function updatePracticeStreak() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    await updateStreak(supabase, user.id);
   }
 
   async function savePracticeSession(
@@ -231,10 +236,21 @@ export function PracticePage() {
     );
   }
 
+  function changeQuestion(nextIndex: number, direction: 1 | -1) {
+    setQuestionDirection(direction);
+    setQuestionIndex(nextIndex);
+    const nextQuestion = questions[nextIndex];
+    const existingAnswer = nextQuestion ? selectedAnswers[nextQuestion.id] : undefined;
+    setSelected(existingAnswer ?? null);
+    setSubmitted(Boolean(existingAnswer));
+  }
+
   function nextQuestion() {
-    setQuestionIndex((i) => i + 1);
-    setSelected(null);
-    setSubmitted(false);
+    changeQuestion(questionIndex + 1, 1);
+  }
+
+  function previousQuestion() {
+    if (questionIndex > 0) changeQuestion(questionIndex - 1, -1);
   }
 
   const question = questions[questionIndex];
@@ -358,6 +374,12 @@ export function PracticePage() {
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : loadError ? (
+                <div className="py-20 text-center space-y-4">
+                  <p className="text-lg font-semibold text-navy">Questions could not load</p>
+                  <p className="text-sm text-slate-500">{loadError}</p>
+                  <Button onClick={loadQuestions}>Try again</Button>
+                </div>
               ) : !question ? (
                 <div className="py-20 text-center space-y-4">
                   <p className="text-lg font-semibold text-navy">
@@ -369,7 +391,14 @@ export function PracticePage() {
                   <Button onClick={loadQuestions}>Restart practice</Button>
                 </div>
               ) : (
-                <>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={question.id}
+                    initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: questionDirection * 18 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: questionDirection * -18 }}
+                    transition={{ duration: reducedMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  >
                   <div className="mb-4 flex gap-2">
                     {question.year && (
                       <Badge className="text-xs">
@@ -385,10 +414,10 @@ export function PracticePage() {
                     {question.prompt}
                   </p>
 
-                  <div className="mt-6 space-y-3">
+                  <Stagger className="mt-6 space-y-3" delay={0.04}>
                     {Object.entries(question.options).map(([key, value]) => (
-                      <button
-                        key={key}
+                      <StaggerItem key={key}>
+                        <button
                         className={cn(
                           "flex w-full items-center justify-between rounded-2xl border border-border p-4 text-left text-base font-medium transition hover:border-primary hover:bg-softblue",
                           selected === key &&
@@ -418,20 +447,23 @@ export function PracticePage() {
                           key !== question.correct_answer && (
                             <XCircle className="h-5 w-5 flex-shrink-0 text-red-500" />
                           )}
-                      </button>
+                        </button>
+                      </StaggerItem>
                     ))}
-                  </div>
+                  </Stagger>
 
                   {submitted && (
-                    <div
+                    <AnswerFeedback
+                      correct={selected === question.correct_answer}
                       className={cn(
-                        "mt-5 rounded-2xl border p-4",
+                        "mt-5 border p-4",
                         selected === question.correct_answer
                           ? "border-green-200 bg-green-50"
                           : "border-red-200 bg-red-50",
                       )}
                     >
-                      <p
+                      <div>
+                        <p
                         className={cn(
                           "font-semibold mb-2",
                           selected === question.correct_answer
@@ -442,11 +474,12 @@ export function PracticePage() {
                         {selected === question.correct_answer
                           ? "Correct"
                           : `Incorrect - Answer is ${question.correct_answer}`}
-                      </p>
-                      <p className="text-sm leading-6 text-slate-600">
-                        {question.explanation}
-                      </p>
-                    </div>
+                        </p>
+                        <p className="text-sm leading-6 text-slate-600">
+                          {question.explanation}
+                        </p>
+                      </div>
+                    </AnswerFeedback>
                   )}
 
                   {submitted && (
@@ -461,7 +494,10 @@ export function PracticePage() {
 
                   {submitted && <ReportQuestion questionId={question.id} />}
 
-                  <div className="mt-6 flex justify-end gap-3">
+                  <div className="mt-6 flex justify-between gap-3">
+                    <Button variant="outline" onClick={previousQuestion} disabled={questionIndex === 0}>
+                      Previous question
+                    </Button>
                     {!submitted ? (
                       <Button disabled={!selected} onClick={handleSubmit}>
                         Submit answer
@@ -470,7 +506,8 @@ export function PracticePage() {
                       <Button onClick={nextQuestion}>Next question</Button>
                     )}
                   </div>
-                </>
+                  </motion.div>
+                </AnimatePresence>
               )}
             </CardContent>
           </Card>
