@@ -43,12 +43,15 @@ export default function AboutPage() {
           <Card className="soft-card mx-auto max-w-4xl">
             <CardContent className="p-8 md:p-10">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-                About the Founder
+                Founder, CEO & Owner
               </p>
               <h2 className="mt-3 text-3xl font-bold text-navy">Charles Ozebo</h2>
+              <p className="mt-2 text-sm font-semibold text-primary">
+                Founder, Chief Executive Officer, and Owner of Prepcore
+              </p>
               <div className="mt-5 max-w-3xl space-y-4 text-base leading-8 text-slate-600">
                 <p>
-                  Charles Ozebo is a Computer Science student and software engineer passionate about technology, education, and building solutions that solve real-world problems. He created Prepcore after recognizing the challenges many Nigerian students face when preparing for JAMB and WAEC.
+                  Charles Ozebo is the founder, Chief Executive Officer (CEO), and owner of Prepcore. He is a Computer Science student and software engineer passionate about technology, education, and building solutions that solve real-world problems. He created Prepcore after recognizing the challenges many Nigerian students face when preparing for JAMB and WAEC.
                 </p>
                 <p>
                   With a focus on software development and product innovation, Charles is committed to using technology to make learning more accessible, engaging, and effective for students. Through Prepcore, he aims to build a platform that not only helps students practice but also gives them the tools and confidence to perform better in their examinations.

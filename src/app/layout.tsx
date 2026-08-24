@@ -118,16 +118,19 @@ export default function RootLayout({
         logo: `${siteConfig.url}/favicons/android-chrome-512x512.png`,
         description: siteConfig.description,
         founder: { "@id": `${siteConfig.url}/about#charles-ozebo` },
+        employee: {
+          "@id": `${siteConfig.url}/about#charles-ozebo`,
+        },
       },
       {
         "@type": "Person",
         "@id": `${siteConfig.url}/about#charles-ozebo`,
         name: "Charles Ozebo",
-        jobTitle: "Software Engineer and Founder of Prepcore",
+        jobTitle: "Founder, Chief Executive Officer (CEO), and Owner of Prepcore",
         url: `${siteConfig.url}/about`,
         sameAs: ["https://www.linkedin.com/in/ozebo-charles-b88471343/"],
         worksFor: { "@id": `${siteConfig.url}/#organization` },
-        description: "Computer Science student and software engineer who founded Prepcore to make JAMB and WAEC preparation more accessible and effective for Nigerian students.",
+        description: "Charles Ozebo is the Founder, Chief Executive Officer (CEO), and Owner of Prepcore, a Nigerian exam-preparation platform for JAMB and WAEC students.",
       },
       {
         "@type": "WebSite",
