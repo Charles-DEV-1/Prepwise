@@ -2,36 +2,26 @@
 
 import { createClient } from "@/services/supabase/client";
 
-export async function sendEmailOtp(email: string, shouldCreateUser: boolean) {
+export async function sendEmailSignInLink(email: string, shouldCreateUser: boolean) {
   const supabase = createClient();
   return supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser,
-      // Retained for the email template's optional confirmation link.
+      // The confirmation link returns here to establish the session securely.
       emailRedirectTo: `${window.location.origin}/auth/callback`,
     },
   });
 }
 
-export async function verifyEmailOtp(email: string, token: string) {
-  const supabase = createClient();
-  const result = await supabase.auth.verifyOtp({ email, token, type: "email" });
-
-  // The profile row is created only after Supabase has accepted the code.
-  // This keeps referral, onboarding, and payment foreign keys consistent for
-  // both email-code and Google sign-ins.
-  if (result.data.user) {
-    await supabase.from("users").upsert(
-      {
-        id: result.data.user.id,
-        email: result.data.user.email ?? email,
-      },
-      { onConflict: "id", ignoreDuplicates: true },
-    );
-  }
-
-  return result;
+export async function checkSignupAvailability(email: string) {
+  const response = await fetch("/api/auth/signup-check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const payload = (await response.json().catch(() => ({}))) as { error?: string };
+  if (!response.ok) throw new Error(payload.error ?? "Unable to start signup. Please try again.");
 }
 
 export async function signInWithGoogle() {
