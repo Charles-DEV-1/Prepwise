@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   appendRefToUrl,
   captureReferralFromSearchParams,
   getReferralCookie,
 } from "@/lib/referral";
+import { applyReferralFromCookie } from "@/services/api/referral";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Chrome, Loader2, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -21,11 +22,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { emailAuthSchema, type EmailAuthValues } from "@/lib/validations";
-import { signInWithGoogle, sendEmailSignInLink } from "@/services/auth";
+import {
+  emailAuthSchema,
+  emailOtpSchema,
+  type EmailAuthValues,
+  type EmailOtpValues,
+} from "@/lib/validations";
+import { signInWithGoogle, sendEmailOtp, verifyEmailOtp } from "@/services/auth";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? (mode === "signup" ? "/onboarding" : "/dashboard");
   const refParam = searchParams.get("ref") ?? getReferralCookie();
   const switchAuthHref =
     mode === "login"
@@ -36,7 +44,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     captureReferralFromSearchParams(searchParams);
   }, [searchParams]);
 
-  const [linkSent, setLinkSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +52,10 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const emailForm = useForm<EmailAuthValues>({
     resolver: zodResolver(emailAuthSchema),
     defaultValues: { email: "" },
+  });
+  const otpForm = useForm<EmailOtpValues>({
+    resolver: zodResolver(emailOtpSchema),
+    defaultValues: { email: "", token: "" },
   });
 
   useEffect(() => {
@@ -55,18 +67,19 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     return () => window.clearTimeout(timer);
   }, [resendSeconds]);
 
-  async function requestSignInLink(values: EmailAuthValues) {
+  async function requestOtp(values: EmailAuthValues) {
     setError("");
     setIsLoading(true);
     const normalizedEmail = values.email.trim().toLowerCase();
-    const { error: requestError } = await sendEmailSignInLink(
+    const { error: requestError } = await sendEmailOtp(
       normalizedEmail,
       mode === "signup",
     );
     setIsLoading(false);
     if (!requestError) {
       setEmail(normalizedEmail);
-      setLinkSent(true);
+      otpForm.setValue("email", normalizedEmail);
+      setOtpSent(true);
       setResendSeconds(30);
     } else {
       setError(
@@ -77,6 +90,19 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     }
   }
 
+  async function submitOtp(values: EmailOtpValues) {
+    setError("");
+    setIsLoading(true);
+    const { data, error: verifyError } = await verifyEmailOtp(values.email, values.token);
+    setIsLoading(false);
+    if (!verifyError && data.user) {
+      await applyReferralFromCookie();
+      router.push(next);
+      return;
+    }
+    setError(verifyError?.message ?? "That code is invalid or has expired. Request a new code and try again.");
+  }
+
   return (
     <Card className="w-full max-w-md shadow-soft">
       <CardHeader>
@@ -84,14 +110,14 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           {mode === "login" ? "Welcome back" : "Create your account"}
         </CardTitle>
         <CardDescription>
-          Continue with a secure email link or Google.
+          Use an email verification code or Google to continue to Prepcore.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!linkSent ? (
+        {!otpSent ? (
           <form
             className="space-y-4"
-            onSubmit={emailForm.handleSubmit(requestSignInLink)}
+            onSubmit={emailForm.handleSubmit(requestOtp)}
           >
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
@@ -114,31 +140,44 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               ) : (
                 <Mail className="h-4 w-4" />
               )}
-              Send verification link
+              Send verification code
             </Button>
           </form>
         ) : (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-              <p className="font-medium">Check your email</p>
-              <p className="mt-1 text-muted-foreground">
-                We sent a verification link to <span className="font-medium text-foreground">{email}</span>. Open it in this browser to continue.
-              </p>
+          <form className="space-y-4" onSubmit={otpForm.handleSubmit(submitOtp)}>
+            <div className="space-y-2">
+              <Label htmlFor="token">Verification code sent to {email}</Label>
+              <Input
+                id="token"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                pattern="[0-9]{6}"
+                placeholder="123456"
+                {...otpForm.register("token")}
+              />
+              {otpForm.formState.errors.token && (
+                <p className="text-xs text-destructive">{otpForm.formState.errors.token.message}</p>
+              )}
             </div>
+            <Button className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Verify and continue
+            </Button>
             <button
               type="button"
               className="w-full text-sm font-medium text-primary"
               disabled={isLoading || resendSeconds > 0}
-              onClick={() => void requestSignInLink({ email })}
+              onClick={() => void requestOtp({ email })}
             >
               {resendSeconds > 0
-                ? `Send another link in ${resendSeconds}s`
-                : "Send another link"}
+                ? `Send a new code in ${resendSeconds}s`
+                : "Send a new code"}
             </button>
-            <button type="button" className="w-full text-sm text-muted-foreground" disabled={isLoading} onClick={() => { setLinkSent(false); setError(""); }}>
+            <button type="button" className="w-full text-sm text-muted-foreground" disabled={isLoading} onClick={() => { setOtpSent(false); setError(""); }}>
               Use a different email address
             </button>
-          </div>
+          </form>
         )}
         {error && (
           <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
