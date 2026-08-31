@@ -2,14 +2,13 @@
 
 import { createClient } from "@/services/supabase/client";
 
-export async function sendEmailOtp(email: string, shouldCreateUser: boolean) {
+export async function sendEmailSignInLink(email: string, shouldCreateUser: boolean) {
   const supabase = createClient();
   return supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser,
-      // If a user chooses the fallback link in the email, it returns to the
-      // same secure server callback that establishes their session.
+      // Supabase returns here after the user opens the emailed verification link.
       emailRedirectTo: `${window.location.origin}/auth/callback`,
     },
   });
