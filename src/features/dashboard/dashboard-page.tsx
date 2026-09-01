@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useExamStore } from "@/store/examStore";
+import { FeedbackPrompt } from "@/components/feedback/feedback-prompt";
 import type { ExamGoal, ExamType } from "@/types/app";
 
 type DashboardData = {
@@ -104,6 +105,7 @@ export function DashboardPage({
 
   return (
     <div className="space-y-6">
+      <FeedbackPrompt />
       {examGoals.length > 1 && (
         <div className="inline-flex rounded-xl border border-border bg-white p-1">
           {(["jamb", "waec"] as const).map((examType) => (

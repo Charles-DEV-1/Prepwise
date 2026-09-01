@@ -16,6 +16,7 @@ const adminLinks = [
   { href: "/admin/partners", label: "Partners" },
   { href: "/admin/partner-program", label: "Affiliate program" },
   { href: "/admin/referrals", label: "Referrals" },
+  { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/question-upload", label: "Questions" },
 ];
 

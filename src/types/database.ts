@@ -93,6 +93,47 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["sessions"]["Row"]>;
         Relationships: [];
       };
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          rating: number;
+          comment: string | null;
+          feedback_type: "general" | "practice" | "exam" | "flashcards" | "weekly_quiz" | "leaderboard" | "website" | "other";
+          feature_context: string | null;
+          source_page: string;
+          prompt_trigger: string;
+          practice_count_at_submission: number;
+          exam_count_at_submission: number;
+          user_plan: "free" | "pro";
+          app_version: string | null;
+          status: "new" | "reviewed" | "resolved";
+          idempotency_key: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["feedback"]["Row"]> & {
+          user_id: string;
+          rating: number;
+          idempotency_key: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["feedback"]["Row"]>;
+        Relationships: [];
+      };
+      feedback_prompt_state: {
+        Row: {
+          user_id: string;
+          last_prompted_at: string | null;
+          postponed_until: string | null;
+          last_submitted_at: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["feedback_prompt_state"]["Row"]> & {
+          user_id: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["feedback_prompt_state"]["Row"]>;
+        Relationships: [];
+      };
       answers: {
         Row: {
           id: string;
