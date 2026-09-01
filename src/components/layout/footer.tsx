@@ -20,6 +20,7 @@ export function Footer() {
         <div className="flex gap-5">
           <Link href="/login">Login</Link>
           <Link href="/pricing">Pricing</Link>
+          <Link href="/privacy-policy">Privacy Policy</Link>
           <a href="mailto:hello@prepcore.ng">Contact</a>
         </div>
       </div>
