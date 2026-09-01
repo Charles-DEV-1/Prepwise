@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/services/supabase/server";
+import { hasTrustedOrigin, noStoreJson, readSafeJson } from "@/lib/api-security";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // llama-3.1-8b-instant was retired by Groq on 2026-08-16.
@@ -13,6 +14,7 @@ const MAX_EXPLANATION_LENGTH = 2_000;
 const MAX_SUBJECT_LENGTH = 80;
 const MAX_OPTION_LENGTH = 500;
 const MAX_OPTIONS = 8;
+const MAX_RATE_LIMIT_ENTRIES = 10_000;
 
 type ExplanationPayload = {
   question: string;
@@ -82,6 +84,14 @@ function parsePayload(body: unknown): ExplanationPayload | null {
 function checkRateLimit(userId: string) {
   const now = Date.now();
   const store = getRateLimitStore();
+  for (const [key, entry] of store) {
+    if (entry.resetAt <= now) store.delete(key);
+  }
+  while (store.size >= MAX_RATE_LIMIT_ENTRIES) {
+    const oldestKey = store.keys().next().value;
+    if (!oldestKey) break;
+    store.delete(oldestKey);
+  }
   const current = store.get(userId);
 
   if (!current || current.resetAt <= now) {
@@ -123,7 +133,7 @@ Give a clear, simple explanation that a Nigerian SS3 student can understand.
 }
 
 function publicError(message: string, status: number, retryAfter?: number) {
-  const response = NextResponse.json({ error: message }, { status });
+  const response = noStoreJson({ error: message }, { status });
   if (retryAfter) {
     response.headers.set("Retry-After", String(retryAfter));
   }
@@ -131,6 +141,9 @@ function publicError(message: string, status: number, retryAfter?: number) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!hasTrustedOrigin(req)) {
+    return publicError("Invalid request origin.", 403);
+  }
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
@@ -157,12 +170,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let body: unknown;
-    try {
-      body = await req.json();
-    } catch {
-      return publicError("Invalid request body.", 400);
-    }
+    const body = await readSafeJson<unknown>(req);
+    if (!body) return publicError("Invalid request body.", 400);
 
     const payload = parsePayload(body);
     if (!payload) {
@@ -205,7 +214,7 @@ export async function POST(req: NextRequest) {
         data.choices?.[0]?.message?.content?.trim() ||
         "Could not generate explanation.";
 
-      return NextResponse.json({ explanation });
+      return noStoreJson({ explanation });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         return publicError("AI service timed out. Please try again.", 504);

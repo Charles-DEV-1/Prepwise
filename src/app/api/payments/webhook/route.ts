@@ -21,6 +21,8 @@ type FlutterwaveWebhookPayload = {
   };
 };
 
+const MAX_WEBHOOK_BYTES = 256 * 1024;
+
 function getEventKey(rawBody: string, payload: FlutterwaveWebhookPayload) {
   return (
     payload.event_id ??
@@ -48,7 +50,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_WEBHOOK_BYTES) {
+    return NextResponse.json({ error: "Payload too large." }, { status: 413 });
+  }
   const rawBody = await request.text();
+  if (rawBody.length > MAX_WEBHOOK_BYTES) {
+    return NextResponse.json({ error: "Payload too large." }, { status: 413 });
+  }
 
   if (!verifyFlutterwaveWebhookSignature(rawBody, request.headers)) {
     console.warn("payments_webhook_invalid_signature");

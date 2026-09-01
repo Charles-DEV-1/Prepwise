@@ -13,6 +13,7 @@ export function verifyPartnerPassword(password: string, stored: string) {
   const [salt, expected] = stored.split(":");
   if (!salt || !expected) return false;
   const actual = crypto.scryptSync(password, salt, 64).toString("hex");
+  if (actual.length !== expected.length) return false;
   return crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
 }
 export function sessionTokenHash(token: string) {
@@ -21,10 +22,11 @@ export function sessionTokenHash(token: string) {
 export async function createPartnerSession(partnerId: string) {
   const token = crypto.randomBytes(32).toString("base64url");
   const admin = createServiceRoleClient();
-  await admin.from("partner_sessions").insert({
+  const { error } = await admin.from("partner_sessions").insert({
     partner_id: partnerId, token: sessionTokenHash(token),
     expires_at: new Date(Date.now() + SESSION_DAYS * 86400000).toISOString(),
   } as never);
+  if (error) throw new Error("Could not create partner session.");
   return token;
 }
 export async function getPartnerSession() {

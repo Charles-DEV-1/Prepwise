@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { hasTrustedOrigin, noStoreJson, readSafeJson } from "@/lib/api-security";
 import { createClient } from "@/services/supabase/server";
 import { createPayment } from "@/services/payments/payment-service";
 import {
@@ -12,6 +12,9 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    if (!hasTrustedOrigin(request)) {
+      return noStoreJson({ error: "Invalid request origin." }, { status: 403 });
+    }
     const ip = getClientIp(request);
     const ipLimit = rateLimit({
       key: `payments:create:ip:${ip}`,
@@ -20,7 +23,7 @@ export async function POST(request: Request) {
     });
 
     if (!ipLimit.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { error: "Too many payment attempts. Please wait and try again." },
         {
           status: 429,
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (userError || !user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return noStoreJson({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userLimit = rateLimit({
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
     });
 
     if (!userLimit.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { error: "Too many payment attempts. Please wait and try again." },
         {
           status: 429,
@@ -55,9 +58,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json().catch(() => ({}))) as {
+    const body = (await readSafeJson<{
       plan_key?: string;
-    };
+    }>(request)) ?? {};
     const planKey =
       body.plan_key && body.plan_key in PAYMENT_PLANS
         ? (body.plan_key as PaymentPlanKey)
@@ -79,14 +82,14 @@ export async function POST(request: Request) {
       planKey,
     });
 
-    return NextResponse.json({
+    return noStoreJson({
       tx_ref: payment.txRef,
       checkout_url: payment.checkoutUrl,
       plan: payment.plan,
     });
   } catch (error) {
     console.error("payments_create_route_failed", error);
-    return NextResponse.json(
+    return noStoreJson(
       { error: "Unable to start payment. Please try again." },
       { status: 500 },
     );

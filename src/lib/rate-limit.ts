@@ -10,16 +10,26 @@ type RateLimitEntry = {
 };
 
 const buckets = new Map<string, RateLimitEntry>();
+const MAX_BUCKETS = 10_000;
 
 function cleanupExpiredBuckets(now: number) {
-  if (buckets.size < 1000) return;
-
   for (const [key, bucket] of buckets.entries()) {
     if (bucket.resetAt <= now) buckets.delete(key);
+  }
+
+  // This is a process-local fallback. Bound its memory so an attacker cannot
+  // grow the map indefinitely with unique keys before a shared limiter is set.
+  while (buckets.size >= MAX_BUCKETS) {
+    const oldestKey = buckets.keys().next().value;
+    if (!oldestKey) break;
+    buckets.delete(oldestKey);
   }
 }
 
 export function rateLimit({ key, limit, windowMs }: RateLimitOptions) {
+  if (!Number.isInteger(limit) || limit < 1 || !Number.isFinite(windowMs) || windowMs <= 0) {
+    throw new Error("Invalid rate-limit configuration.");
+  }
   const now = Date.now();
   cleanupExpiredBuckets(now);
 

@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { noStoreJson } from "@/lib/api-security";
 import { createClient } from "@/services/supabase/server";
 import { verifyAndActivatePayment } from "@/services/payments/payment-service";
 
@@ -12,14 +12,14 @@ export async function GET(request: Request) {
   const txRef = url.searchParams.get("tx_ref");
 
   if (!transactionId) {
-    return NextResponse.json(
+    return noStoreJson(
       { success: false, error: "Missing transaction_id." },
       { status: 400 },
     );
   }
 
   if (!txRef) {
-    return NextResponse.json(
+    return noStoreJson(
       { success: false, error: "Missing tx_ref." },
       { status: 400 },
     );
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     });
 
     if (!ipLimit.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { success: false, error: "Too many verification attempts." },
         {
           status: 429,
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return NextResponse.json(
+      return noStoreJson(
         { success: false, error: "Unauthorized" },
         { status: 401 },
       );
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     });
 
     if (!userLimit.allowed) {
-      return NextResponse.json(
+      return noStoreJson(
         { success: false, error: "Too many verification attempts." },
         {
           status: 429,
@@ -76,10 +76,10 @@ export async function GET(request: Request) {
       userId: user.id,
       txRef,
     });
-    return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    return noStoreJson(result, { status: result.success ? 200 : 400 });
   } catch (error) {
     console.error("payments_verify_route_failed", error);
-    return NextResponse.json(
+    return noStoreJson(
       { success: false, error: "Could not verify payment." },
       { status: 500 },
     );
