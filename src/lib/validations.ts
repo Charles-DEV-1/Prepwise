@@ -10,6 +10,11 @@ export const emailOtpSchema = z.object({
 });
 
 export const onboardingSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Tell us the name you would like us to use")
+    .max(80, "Keep your name under 80 characters"),
   examType: z.enum(["jamb", "waec"]),
   examGoals: z
     .array(z.enum(["jamb", "waec"]))

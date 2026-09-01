@@ -22,6 +22,7 @@ import { getReferralCookie } from "@/lib/referral";
 import { clearUserReferralCode } from "@/lib/user-referral-storage";
 import { onboardingSchema, type OnboardingValues } from "@/lib/validations";
 import { completeOnboarding } from "@/services/api/profile";
+import { createClient } from "@/services/supabase/client";
 import {
   applyAnyReferralCode,
   applyReferralFromCookie,
@@ -68,6 +69,7 @@ export function OnboardingForm() {
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
+      fullName: "",
       examType: "jamb",
       examGoals: ["jamb"],
       subjects: ["English"],
@@ -87,6 +89,16 @@ export function OnboardingForm() {
       }
       const cookieCode = getReferralCookie();
       if (cookieCode) form.setValue("referralCode", cookieCode);
+    })();
+  }, [form]);
+
+  useEffect(() => {
+    void (async () => {
+      const { data: { user } } = await createClient().auth.getUser();
+      const fullName = user?.user_metadata?.full_name;
+      if (typeof fullName === "string" && fullName.trim()) {
+        form.setValue("fullName", fullName.trim());
+      }
     })();
   }, [form]);
 
@@ -120,6 +132,26 @@ export function OnboardingForm() {
           className="space-y-6"
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
+          <div className="space-y-2 rounded-2xl border border-primary/15 bg-softblue/45 p-4 sm:p-5">
+            <Label htmlFor="fullName" className="text-base text-navy">
+              What should we call you?
+            </Label>
+            <p className="text-sm leading-6 text-slate-600">
+              Use your first name or the name you&apos;d like to see across your Prepcore dashboard.
+            </p>
+            <Input
+              id="fullName"
+              autoComplete="name"
+              placeholder="e.g. Daniel"
+              className="mt-2 bg-white"
+              {...form.register("fullName")}
+            />
+            {form.formState.errors.fullName && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.fullName.message}
+              </p>
+            )}
+          </div>
           <div>
             <Label>Which exam are you preparing for?</Label>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">

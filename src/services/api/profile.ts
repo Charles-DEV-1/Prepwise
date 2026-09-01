@@ -21,8 +21,15 @@ export async function completeOnboarding(values: OnboardingValues) {
   if (userError || !user)
     throw userError ?? new Error("Missing authenticated user");
 
+  const fullName = values.fullName.trim();
+  const { error: metadataError } = await supabase.auth.updateUser({
+    data: { full_name: fullName },
+  });
+  if (metadataError) throw metadataError;
+
   const payload = {
     id: user.id,
+    full_name: fullName,
     phone: user.phone,
     email: user.email,
     exam_type: values.examType,
