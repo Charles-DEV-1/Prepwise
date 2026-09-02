@@ -45,6 +45,44 @@ function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
+/**
+ * Rearranges the options only in a learner session response. The stored
+ * question, its provider-imported options, and its answer key are never
+ * modified. Keeping the display labels while moving their values also keeps
+ * existing answer selection and result saving behaviour intact.
+ */
+function randomizeOptionOrder(question: StoredQuestion): StoredQuestion {
+  const entries = Object.entries(question.options);
+  const shuffledEntries = [...entries];
+
+  // Fisher-Yates avoids the distribution bias of sorting with Math.random().
+  for (let index = shuffledEntries.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledEntries[index], shuffledEntries[swapIndex]] = [
+      shuffledEntries[swapIndex],
+      shuffledEntries[index],
+    ];
+  }
+
+  const displayKeys = entries.map(([key]) => key);
+  const options = Object.fromEntries(
+    displayKeys.map((displayKey, index) => [
+      displayKey,
+      shuffledEntries[index][1],
+    ]),
+  );
+  const correctIndex = shuffledEntries.findIndex(
+    ([sourceKey]) => sourceKey === question.correct_answer,
+  );
+
+  return {
+    ...question,
+    options,
+    correct_answer:
+      correctIndex >= 0 ? displayKeys[correctIndex] : question.correct_answer,
+  };
+}
+
 
 async function isProUser(userId: string) {
   const supabase = createServiceRoleClient();
@@ -164,6 +202,7 @@ async function handlePost(request: Request) {
     return noStoreJson({
       questions: shuffle((data ?? []) as StoredQuestion[])
         .filter(isRenderableQuestion)
+        .map(randomizeOptionOrder)
         .slice(0, limit),
       isPro,
     });
@@ -191,6 +230,7 @@ async function handlePost(request: Request) {
   return noStoreJson({
     questions: shuffle((questions ?? []) as StoredQuestion[])
       .filter(isRenderableQuestion)
+      .map(randomizeOptionOrder)
       .slice(0, limit),
     isPro,
   });
