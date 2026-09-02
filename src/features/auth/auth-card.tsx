@@ -69,6 +69,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     const { error: requestError } = await sendEmailSignInLink(
       normalizedEmail,
       mode === "signup",
+      mode === "signup" ? searchParams.get("diagnostic_token") : null,
     );
     setIsLoading(false);
     if (!requestError) {
@@ -160,7 +161,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => void signInWithGoogle()}
+          onClick={() => void signInWithGoogle(mode === "signup" ? searchParams.get("diagnostic_token") : null)}
         >
           <Chrome className="h-4 w-4" />
           Continue with Google

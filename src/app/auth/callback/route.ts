@@ -8,6 +8,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const diagnosticToken = requestUrl.searchParams.get("diagnostic_token");
   const origin = requestUrl.origin;
 
   if (code) {
@@ -54,6 +55,13 @@ export async function GET(request: NextRequest) {
       );
 
       await applyReferralFromServerCookies();
+
+      if (diagnosticToken) {
+        await supabase
+          .from("diagnostic_test_results")
+          .update({ converted_to_signup: true })
+          .eq("session_token", diagnosticToken);
+      }
     }
     // Check if user has completed onboarding
     // reuse the authenticated user retrieved above

@@ -75,6 +75,35 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["questions"]["Row"]>;
         Relationships: [];
       };
+      diagnostic_test_results: {
+        Row: {
+          id: string;
+          department: string;
+          subjects_tested: string[];
+          total_questions: number;
+          total_correct: number;
+          score_percent: number;
+          estimated_jamb_score: number;
+          weak_topics: Json | null;
+          subject_breakdown: Json;
+          session_token: string;
+          converted_to_signup: boolean;
+          user_agent: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["diagnostic_test_results"]["Row"]> & {
+          department: string;
+          subjects_tested: string[];
+          total_questions: number;
+          total_correct: number;
+          score_percent: number;
+          estimated_jamb_score: number;
+          subject_breakdown: Json;
+          session_token: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["diagnostic_test_results"]["Row"]>;
+        Relationships: [];
+      };
       sessions: {
         Row: {
           id: string;

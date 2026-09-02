@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3,
+  ArrowRight,
   BookOpenCheck,
   Brain,
   CalendarDays,
@@ -204,6 +205,19 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-10 sm:py-14">
+        <div className="container">
+          <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] p-7 text-white shadow-[0_20px_50px_rgba(37,99,235,0.2)] sm:p-10">
+            <p className="text-sm font-bold uppercase tracking-[0.12em] text-blue-100">Free JAMB diagnostic</p>
+            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-normal sm:text-4xl">Only 24% of JAMB candidates scored above 200 in 2026</h2>
+            <p className="mt-3 max-w-xl text-blue-100">Find out where you stand in 5 minutes - completely free.</p>
+            <Button asChild size="lg" variant="outline" className="mt-6 border-white bg-white text-primary hover:bg-blue-50">
+              <Link href="/diagnostic">Take the free diagnostic test <ArrowRight className="h-4 w-4" /></Link>
+            </Button>
           </div>
         </div>
       </section>

@@ -1,0 +1,24 @@
+// Prepcore - Free Diagnostic Test
+
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { CheckCircle2, Copy, Loader2, Share2, TriangleAlert } from "lucide-react";
+import { createClient } from "@/services/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+type Breakdown = Record<string, { correct: number; total: number }>;
+type Result = { score_percent: number; estimated_jamb_score: number; weak_topics: string[] | null; subject_breakdown: Breakdown };
+
+export default function DiagnosticResultsPage() {
+  const token = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("token");
+  const [result, setResult] = useState<Result | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!token) return; void createClient().from("diagnostic_test_results").select("score_percent, estimated_jamb_score, weak_topics, subject_breakdown").eq("session_token", token).single().then(({ data }) => { if (data) setResult({ ...data, weak_topics: Array.isArray(data.weak_topics) ? data.weak_topics.filter((topic): topic is string => typeof topic === "string") : [], subject_breakdown: data.subject_breakdown as Breakdown }); }); }, [token]);
+  if (!result) return <main className="flex min-h-screen items-center justify-center bg-[#F8FAFC]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></main>;
+  const shareText = `I just found out my weak areas for JAMB using Prepcore's free diagnostic test. My estimated score: ${result.estimated_jamb_score}/400. Think you can beat me? Try yours free: ${window.location.origin}/diagnostic`;
+  async function share() { if (navigator.share) await navigator.share({ title: "My Prepcore diagnostic result", text: shareText }); else { await navigator.clipboard.writeText(shareText); setCopied(true); window.setTimeout(() => setCopied(false), 2500); } }
+  return <main className="min-h-screen bg-[#F8FAFC] px-4 py-10 text-navy sm:py-16"><div className="mx-auto max-w-2xl"><p className="text-sm font-bold text-primary">Your diagnostic result</p><h1 className="mt-3 text-5xl font-bold">{result.score_percent}%</h1><p className="mt-2 text-lg text-slate-600">Estimated JAMB Score: <strong className="text-navy">{result.estimated_jamb_score}/400</strong></p><Card className="mt-8 border-0 bg-[#0F172A] text-white shadow-soft"><CardContent className="p-6"><p className="font-bold">In 2026, only 24% of JAMB candidates scored above 200.</p><div className="mt-4 flex gap-3 text-sm text-slate-200">{result.estimated_jamb_score >= 200 ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-400" /> : <TriangleAlert className="h-5 w-5 shrink-0 text-amber-400" />}<span>{result.estimated_jamb_score >= 200 ? "Your estimated score puts you ahead of 76% of candidates. Keep this up." : "Right now you're in the range where 76% of candidates struggle. Let's fix that."}</span></div></CardContent></Card><section className="mt-8"><h2 className="text-xl font-bold">Subject breakdown</h2><div className="mt-4 space-y-4">{Object.entries(result.subject_breakdown).map(([subject, item]) => { const percentage = Math.round((item.correct / item.total) * 100); const color = percentage > 70 ? "bg-green-600" : percentage >= 40 ? "bg-amber-500" : "bg-red-600"; return <div key={subject}><div className="flex justify-between text-sm"><span className="font-semibold">{subject}</span><span className="text-slate-500">{item.correct}/{item.total}</span></div><div className="mt-2 h-2 rounded-full bg-slate-200"><div className={`h-full rounded-full ${color}`} style={{ width: `${percentage}%` }} /></div></div>; })}</div></section><section className="mt-8"><h2 className="text-xl font-bold">Your weakest areas right now:</h2><div className="mt-3 flex flex-wrap gap-2">{(result.weak_topics?.length ? result.weak_topics : ["Keep practising mixed questions"]).map((topic) => <span key={topic} className="rounded-full border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{topic}</span>)}</div></section><Card className="mt-8 border-primary/20 bg-[#EFF6FF]"><CardContent className="p-6"><h2 className="text-xl font-bold">Want a full study plan built around exactly these weak spots?</h2><Button asChild className="mt-5 w-full sm:w-auto"><Link href={`/signup?diagnostic_token=${encodeURIComponent(token ?? "")}`}>Create free account to fix these gaps <span aria-hidden="true">-&gt;</span></Link></Button><p className="mt-3 text-sm text-slate-600">Takes 30 seconds. Your weak areas are already saved.</p></CardContent></Card><Button variant="outline" className="mt-5 w-full sm:w-auto" onClick={() => void share()}><Share2 className="h-4 w-4" />{copied ? "Result copied" : "Think your friend can beat your score? Send them the link"}<Copy className="h-4 w-4" /></Button></div></main>;
+}
